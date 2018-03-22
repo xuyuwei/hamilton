@@ -2,7 +2,7 @@ import os
 import numpy as np
 import string
 import random
-
+import hashlib
 
 
 class Graph:
@@ -11,10 +11,14 @@ class Graph:
     # dim - Dimension of the adjaceny matrix
     # ratio - Approximate number of edges to include
     # hc - specify whether the graph is hamiltonian
-    def __init__(self, dim = 100, ratio = 0.5, hc = 0):
+    def __init__(self, dim = 100, ratio = 0.5, hc = -1):
         
         self.G = np.random.uniform(size=[dim, dim])
         self.dim = dim
+        self.s2v = ''
+        self.hc = 0
+        self.label = ''
+
 
         # Adjust ratio to include edges
         if hc == 1:
@@ -43,7 +47,11 @@ class Graph:
             self.G[perm[0],perm[-1]] = 1
             self.G[perm[-1],perm[0]] = 1
         
-        # Use concorde to determine if there is a ham cycle
+    
+    # Determine if G has a cycle using concorde
+    # Concorde executable must be in PATH
+    def HasCycle(self):
+
         # Header for file
         pre_filename = "0"
         filename = 'input.tsp'
@@ -86,8 +94,26 @@ class Graph:
             self.hc = 0
 
 
+    
+    # Print Graph
     def printGraph(self):
         for i in range(0,self.dim):
             for j in range(0,self.dim):
                 print(self.G[i][j], end=' ')
             print("\n")
+
+
+    # Format graph for struct to vec input 
+    def adj_to_s2v(self):
+
+        # Header
+        self.label = hashlib.md5(self.G.data).hexdigest()
+        self.s2v = str(self.dim) + ' ' + self.label + '\n'
+
+        # Adjacency
+        for i in range(0,self.dim):
+            x = np.where(self.G[i,:] == 1.)[0]
+            y = np.array2string(x, separator=' ', precision=1)
+            y = y[1:-1].lstrip()
+            self.s2v = self.s2v + y + '\n'
+            
