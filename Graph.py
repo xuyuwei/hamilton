@@ -17,7 +17,6 @@ class Graph:
         self.dim = dim
         self.s2v = ''
         self.hc = 0
-        self.label = ''
 
 
         # Adjust ratio to include edges
@@ -107,8 +106,7 @@ class Graph:
     def adj_to_s2v(self):
 
         # Header
-        self.label = hashlib.md5(self.G.data).hexdigest()
-        self.s2v = str(self.dim) + ' ' + self.label + '\n'
+        self.s2v = str(self.dim) + ' ' + str(self.hc) + '\n'
 
         # Adjacency
         for i in range(0,self.dim):
