@@ -80,7 +80,7 @@ class Graph:
         f.close()
 
         # Run concorde on file
-        concorde_out = os.popen('concorde ' + filename).read()
+        concorde_out = os.popen('concorde ' + filename + ' 2>/dev/null ').read()
         
         # Remove concorde created files
         #os.system('rm input.* Oinput.*')
@@ -90,6 +90,7 @@ class Graph:
             self.hc = 1
         else:
             self.hc = 0
+
 
 
     
@@ -110,7 +111,7 @@ class Graph:
         # Adjacency
         for i in range(0,self.dim):
             x = np.where(self.G[i,:] == 1.)[0]
-            y = np.array2string(x, separator=' ')
-            y = y[1:-1].lstrip()
-            self.s2v = self.s2v + '0 ' + str(x.shape[0]) + ' ' + y + '\n'
-            
+            self.s2v += '0 ' + str(x.shape[0]) + ' '
+            for i in x:
+                self.s2v += str((int)(i)) + ' '
+            self.s2v += '\n'
