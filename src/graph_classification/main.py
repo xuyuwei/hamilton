@@ -104,7 +104,15 @@ if __name__ == '__main__':
     if cmd_args.mode == 'gpu':
         classifier = classifier.cuda()
     
-    optimizer = optim.Adam(classifier.parameters(), lr=cmd_args.learning_rate)
+    # Optimizer Options
+    if cmd_args.optim == 'Adagrad':
+        optimizer = optim.Adagrad(classifier.parameters(), lr=cmd_args.learning_rate, lr_decay=cmd_args.lr_decay)
+    
+    elif cmd_args.optim == 'SGD':
+        optimizer = optim.SGD(classifier.parameters(), lr=cmd_args.learning_rate, momentum=cmd_args.momentum)
+
+    else:
+        optimizer = optim.Adam(classifier.parameters(), lr=cmd_args.learning_rate)
 
     train_idxes = list(range(len(train_graphs)))
     best_loss = None

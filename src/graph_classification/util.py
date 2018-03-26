@@ -23,6 +23,9 @@ cmd_opt.add_argument('-out_dim', type=int, default=1024, help='s2v output size')
 cmd_opt.add_argument('-hidden', type=int, default=100, help='dimension of regression')
 cmd_opt.add_argument('-max_lv', type=int, default=4, help='max rounds of message passing')
 cmd_opt.add_argument('-learning_rate', type=float, default=0.0001, help='init learning_rate')
+cmd_opt.add_argument('-optim', default='Adam', help='optimizer')
+cmd_opt.add_argument('-momentum', type=float, default=0., help='momentum')
+cmd_opt.add_argument('-lr_decay', type=float, default=0., help='set decay of learning rate')
 
 cmd_args, _ = cmd_opt.parse_known_args()
 
