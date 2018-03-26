@@ -9,6 +9,8 @@ import DataSet as DataSet
 d = DataSet.DataSet(100,0.1)
 d.DeleteCurrentFolder()
 d.DeleteDataFolder()
-d.Generate(num_threads=0)
+d.Generate(num_threads=4)
 d.ToDirectory()
 d.ToDataFolder()
+
+print('Done')

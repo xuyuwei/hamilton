@@ -48,11 +48,11 @@ class Graph:
     
     # Determine if G has a cycle using concorde
     # Concorde executable must be in PATH
-    def HasCycle(self):
+    def HasCycle(self, thread_num = 0):
 
         # Header for file
-        pre_filename = "0"
-        filename = 'input.tsp'
+        pre_filename = str(thread_num)
+        filename = str(thread_num) + 'input.tsp'
         writeval = ['NAME: ' + pre_filename + '\n', \
             'TYPE: TSP (M.~Hofmeister)' + '\n', \
             'DIMENSION: ' + str(self.dim) + '\n', \
@@ -80,10 +80,10 @@ class Graph:
         f.close()
 
         # Run concorde on file
-        concorde_out = os.popen('concorde input.tsp').read()
+        concorde_out = os.popen('concorde ' + filename).read()
         
         # Remove concorde created files
-        os.system('rm input.* Oinput.*')
+        #os.system('rm input.* Oinput.*')
         
         # Check output to find ham cycle
         if 'Optimal Solution: 0.00' in concorde_out:
@@ -97,7 +97,7 @@ class Graph:
     def printGraph(self):
         for i in range(0,self.dim):
             for j in range(0,self.dim):
-                print(self.G[i][j], end=' ')
+                print(self.G[i][j]+' ')
             print("\n")
 
 

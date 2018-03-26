@@ -2,9 +2,8 @@ import Graph as Graph
 import time
 import random
 import os
-import concurrent.futures
+import multiprocessing
 import numpy as np
-
 
 class DataSet:
 
@@ -26,21 +25,20 @@ class DataSet:
         np.random.permutation(self.folds)
 
     # Call for concurrent generation
-    def ConcurrentGen(data, low, high, thread_num, iters):
-        output = ''
+    def ConcurrentGen(self, low, high, thread_num, iters, out_q):
         # Generate data
+        output = ''
         for i in range(0,iters):
-            if i%100 == 0:
-                print('Iter: ', i, '   Cycle: ', data.num_hc, '  No Cycle: ' ,i-self.num_hc, 'Thread Num: ', thread_num)
+            if i%20 == 0:
+                print('Iter: ', i, '   Cycle: ', self.num_hc, '  No Cycle: ' ,i-self.num_hc, 'Thread Num: ', thread_num)
             n = random.randint(low,high)
-            g = Graph.Graph(dim=n, ratio = data.ratio)
-            g.HasCycle()
+            g = Graph.Graph(dim=n, ratio = self.ratio)
+            g.HasCycle(thread_num = thread_num)
             g.adj_to_s2v()
             if g.hc:
-                data.num_hc += 1
+                self.num_hc += 1
             output += g.s2v
-
-        return output, data.num_hc
+        out_q.put(output)
 
 
     def Generate(self, low = 20, high = 80, num_threads = 1):
@@ -48,34 +46,34 @@ class DataSet:
         # Time 
         start_time = time.time()
 
-        if num_threads == 0:
-            # Add self.points graphs to dataset
-            for i in range(0,self.points):
-                if i%10 == 0:
-                    print('Iter: ', i, '   Cycle: ', self.num_hc, '  No Cycle: ' ,i-self.num_hc)
-                n = random.randint(low,high)
-                g = Graph.Graph(dim=n, ratio = self.ratio)
-                g.HasCycle()
-                g.adj_to_s2v()
-                if g.hc:
-                    self.num_hc += 1
-                self.data += g.s2v
-
         # Genereate data in parallel
-        else:
-            '''
-            iters = (int)(self.points/num_threads)
-            output = []
+        processes = []
+        iters = (int)(self.points/num_threads)
+        out_q = multiprocessing.Queue()
 
-            executor = ThreadPoolExecutor(max_workers=num_threads)
-            for i in range(0,num_threads):
-                
-                output.append(executor.submit(ConcurrentGen, ))
-                
-            '''
+        # Create processes
+        for i in range(num_threads):
+            args = {'low':low,'high':high,'thread_num':i,'iters':iters,'out_q':out_q}
+            p = multiprocessing.Process(target=self.ConcurrentGen, kwargs=args)
+            processes.append(p)
+
+        # Start each thread
+        [p.start() for p in processes]
+
+        # Add result to data
+        for i in range(num_threads):
+            self.data += out_q.get()
+
+        # Wait on all to finish
+        [p.join() for p in processes]
+
+        # Remove concorde created files
+        os.system('rm *.mas *.pul *.tsp *.sol *.sav *.res')
+
         # Total Time
         elapsed_time = time.time() - start_time
         print(elapsed_time)
+
 
     def ToDirectory(self):
         
