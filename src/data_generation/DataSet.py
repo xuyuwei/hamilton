@@ -7,12 +7,14 @@ import numpy as np
 
 class DataSet:
 
-    def __init__(self, points = 1000, ratio = 0.1):
+    def __init__(self, points = 1000, ratio = 0.1, prob_hc = 0):
         
         self.points = points
         self.ratio = ratio
+        self.prob_hc = prob_hc
         self.filename = str(self.ratio).replace('.', '-')
-        self.filename += '_' + str(self.points) + '.txt'
+        self.filename += '_' + str(self.points) + '_' 
+        self.filename += str(self.prob_hc).replace('.', '-') +  '.txt'
         self.dirname = self.filename[0:-4]
         self.num_hc = 0
 
@@ -29,10 +31,18 @@ class DataSet:
         # Generate data
         output = ''
         for i in range(0,iters):
+            
             if i%20 == 0:
                 print('Iter: ', i, '   Cycle: ', self.num_hc, '  No Cycle: ' ,i-self.num_hc, 'Thread Num: ', thread_num)
+            
             n = random.randint(low,high)
-            g = Graph.Graph(dim=n, ratio = self.ratio)
+            prob = np.random.uniform()
+            # Add cycle with probabiolity
+            if prob < self.prob_hc:
+                g = Graph.Graph(dim = n, ratio = self.ratio, hc = 1)
+            else:
+                g = Graph.Graph(dim = n, ratio = self.ratio)
+            
             g.HasCycle(thread_num = thread_num)
             g.adj_to_s2v()
             if g.hc:
@@ -132,5 +142,3 @@ class DataSet:
     def DeleteDataFolder(self):
         rm = 'rm -r ../graph_classification/data/' + self.dirname
         os.system(rm)
-
-
