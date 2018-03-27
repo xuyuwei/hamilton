@@ -26,6 +26,7 @@ cmd_opt.add_argument('-learning_rate', type=float, default=0.0001, help='init le
 cmd_opt.add_argument('-optim', default='Adam', help='optimizer')
 cmd_opt.add_argument('-momentum', type=float, default=0., help='momentum')
 cmd_opt.add_argument('-lr_decay', type=float, default=0., help='set decay of learning rate')
+cmd_opt.add_argument('-save_dir', type=str, default='.', help='directory to save model in')
 
 cmd_args, _ = cmd_opt.parse_known_args()
 

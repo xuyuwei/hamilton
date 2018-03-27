@@ -30,4 +30,5 @@ python2 main.py \
     -optim $optim \
     -lr_decay $lr_decay \
     -momentum $momentum \
+    -save_dir best-model \
     $@
