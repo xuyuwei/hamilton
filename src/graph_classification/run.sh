@@ -1,14 +1,14 @@
 #!/bin/bash
 
-DATA=HAMCYCLEMED
+DATA=0-1_100
 
 gm=loopy_bp
 
 LV=3
 CONV_SIZE=64
-FP_LEN=0
+FP_LEN=64
 n_hidden=128
-bsize=128
+bsize=20
 num_epochs=2000
 learning_rate=0.1
 optim=Adagrad
@@ -19,6 +19,7 @@ fold=2
 python2 main.py \
     -seed 1 \
     -mode cpu \
+    -gm $gm \
     -data $DATA \
     -learning_rate $learning_rate \
     -num_epochs $num_epochs \
