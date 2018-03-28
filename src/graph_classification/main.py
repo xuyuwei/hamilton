@@ -124,8 +124,8 @@ if __name__ == '__main__':
         test_loss = loop_dataset(test_graphs, classifier, list(range(len(test_graphs))))
         print('\033[93maverage test of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, test_loss[0], test_loss[1]))
 
-        # if best_loss is None or test_loss[0] < best_loss:
-        #     best_loss = test_loss[0]
-        #     print('----saving to best model since this is the best valid loss so far.----')
-        #     torch.save(classifier.state_dict(), cmd_args.save_dir + '/epoch-best.model')
-        #     save_args(cmd_args.save_dir + '/epoch-best-args.pkl', cmd_args)
+        if best_loss is None or test_loss[0] < best_loss:
+            best_loss = test_loss[0]
+            print('----saving to best model since this is the best valid loss so far.----')
+            torch.save(classifier, cmd_args.save_dir + '/epoch-best.model')
+            # save_args(cmd_args.save_dir + '/epoch-best-args.pkl', cmd_args)

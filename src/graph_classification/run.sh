@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATA=0-05_10000_0-25
+DATA=HAMCYCLEMED
 
 gm=loopy_bp
 
@@ -14,11 +14,11 @@ learning_rate=0.1
 optim=Adagrad
 momentum=0
 lr_decay=0
-fold=1
+fold=2
 
 python2 main.py \
     -seed 1 \
-    -mode gpu \
+    -mode cpu \
     -data $DATA \
     -learning_rate $learning_rate \
     -num_epochs $num_epochs \
@@ -30,4 +30,5 @@ python2 main.py \
     -optim $optim \
     -lr_decay $lr_decay \
     -momentum $momentum \
+    -save_dir best-model \
     $@
