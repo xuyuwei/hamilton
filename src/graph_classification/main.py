@@ -114,35 +114,37 @@ if __name__ == '__main__':
     np.random.seed(cmd_args.seed)
     torch.manual_seed(cmd_args.seed)
 
-    train_graphs, test_graphs = load_data()
-    print('# train: %d, # test: %d' % (len(train_graphs), len(test_graphs)))
+    # Iterate through a number of datasets, to train a number of different models
+    for dataset in os.listdir('./data/' + cmd_args.data):
+        train_graphs, test_graphs = load_data(dataset)
+        print('# train: %d, # test: %d' % (len(train_graphs), len(test_graphs)))
 
-    classifier = Classifier()
-    if cmd_args.mode == 'gpu':
-        classifier = classifier.cuda()
-    
-    # Optimizer Options
-    if cmd_args.optim == 'Adagrad':
-        optimizer = optim.Adagrad(classifier.parameters(), lr=cmd_args.learning_rate, lr_decay=cmd_args.lr_decay)
-    
-    elif cmd_args.optim == 'SGD':
-        optimizer = optim.SGD(classifier.parameters(), lr=cmd_args.learning_rate, momentum=cmd_args.momentum)
-
-    else:
-        optimizer = optim.Adam(classifier.parameters(), lr=cmd_args.learning_rate)
-
-    train_idxes = list(range(len(train_graphs)))
-    best_loss = None
-    for epoch in range(cmd_args.num_epochs):
-        random.shuffle(train_idxes)
-        avg_loss = loop_dataset(train_graphs, classifier, train_idxes, optimizer=optimizer)
-        print('\033[92maverage training of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, avg_loss[0], avg_loss[1]))
+        classifier = Classifier()
+        if cmd_args.mode == 'gpu':
+            classifier = classifier.cuda()
         
-        test_loss = loop_dataset(test_graphs, classifier, list(range(len(test_graphs))))
-        print('\033[93maverage test of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, test_loss[0], test_loss[1]))
+        # Optimizer Options
+        if cmd_args.optim == 'Adagrad':
+            optimizer = optim.Adagrad(classifier.parameters(), lr=cmd_args.learning_rate, lr_decay=cmd_args.lr_decay)
+        
+        elif cmd_args.optim == 'SGD':
+            optimizer = optim.SGD(classifier.parameters(), lr=cmd_args.learning_rate, momentum=cmd_args.momentum)
 
-        if best_loss is None or test_loss[0] < best_loss:
-            best_loss = test_loss[0]
-            print('----saving to best model since this is the best valid loss so far.----')
-            torch.save(classifier, cmd_args.save_dir + '/epoch-best.model')
-            # save_args(cmd_args.save_dir + '/epoch-best-args.pkl', cmd_args)
+        else:
+            optimizer = optim.Adam(classifier.parameters(), lr=cmd_args.learning_rate)
+
+        train_idxes = list(range(len(train_graphs)))
+        best_loss = None
+        for epoch in range(cmd_args.num_epochs):
+            random.shuffle(train_idxes)
+            avg_loss = loop_dataset(train_graphs, classifier, train_idxes, optimizer=optimizer)
+            print('\033[92maverage training of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, avg_loss[0], avg_loss[1]))
+            
+            test_loss = loop_dataset(test_graphs, classifier, list(range(len(test_graphs))))
+            print('\033[93maverage test of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, test_loss[0], test_loss[1]))
+
+            if best_loss is None or test_loss[0] < best_loss:
+                best_loss = test_loss[0]
+                print('----saving to best model since this is the best valid loss so far.----')
+                torch.save(classifier, cmd_args.save_dir + '/epoch-best' + dataset + '.model')
+                # save_args(cmd_args.save_dir + '/epoch-best-args.pkl', cmd_args)

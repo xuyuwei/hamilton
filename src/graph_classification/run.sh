@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATA=0-1_100
+DATA=TWOSETS
 
 gm=loopy_bp
 
@@ -9,7 +9,7 @@ CONV_SIZE=64
 FP_LEN=64
 n_hidden=128
 bsize=20
-num_epochs=2000
+num_epochs=10
 learning_rate=0.1
 optim=Adagrad
 momentum=0
