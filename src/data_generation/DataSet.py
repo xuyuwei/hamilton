@@ -7,14 +7,29 @@ import numpy as np
 
 class DataSet:
 
-    def __init__(self, points = 1000, ratio = 0.1, prob_hc = 0):
+    def __init__(self, points = 11000, edge_range = [0.02,0.2], node_range = [20, 100], prob_hc = 0):
         
         self.points = points
-        self.ratio = ratio
+        self.edge_range = edge_range
+        self.node_range = node_range
         self.prob_hc = prob_hc
-        self.filename = str(self.ratio).replace('.', '-')
-        self.filename += '_' + str(self.points) + '_' 
-        self.filename += str(self.prob_hc).replace('.', '-') +  '.txt'
+
+        low_range = str(self.edge_range[0])[2:]
+        high_range = str(self.edge_range[1])[2:]
+        hc_val = str(self.prob_hc)[2:]
+        if (len(low_range) == 1):
+            low_range += '0'
+        if (len(high_range) == 1):
+            high_range += '0'
+        if (len(hc_val) == 1):
+            hc_val += '0'
+
+        # Get filename
+        self.filename = low_range + '-'
+        self.filename += high_range + '_'
+        self.filename += str(self.node_range[0]) + '-'
+        self.filename += str(self.node_range[1]) + '_'
+        self.filename += hc_val +  '.txt'
         self.dirname = self.filename[0:-4]
         self.num_hc = 0
 
@@ -27,21 +42,25 @@ class DataSet:
         np.random.permutation(self.folds)
 
     # Call for concurrent generation
-    def ConcurrentGen(self, low, high, thread_num, iters, out_q):
+    def ConcurrentGen(self, thread_num, iters, out_q):
         # Generate data
         output = ''
         for i in range(0,iters):
             
-            if i%20 == 0:
-                print('Iter: ', i, '   Cycle: ', self.num_hc, '  No Cycle: ' ,i-self.num_hc, 'Thread Num: ', thread_num)
+            if (i+1)%500 == 0:
+                print('Iter: ', i+1, '   Cycle: ', self.num_hc, '  No Cycle: ' ,i-self.num_hc, 'Thread Num: ', thread_num)
             
-            n = random.randint(low,high)
+            if i == iters-1:
+                print('Thread ', thread_num, ' is done')
+
+            n = random.randint(self.node_range[0],self.node_range[1])
+            edges = np.random.uniform(self.edge_range[0],self.edge_range[1])
             prob = np.random.uniform()
             # Add cycle with probabiolity
             if prob < self.prob_hc:
-                g = Graph.Graph(dim = n, ratio = self.ratio, hc = 1)
+                g = Graph.Graph(dim = n, ratio = edges, hc = 1)
             else:
-                g = Graph.Graph(dim = n, ratio = self.ratio)
+                g = Graph.Graph(dim = n, ratio = edges)
             
             g.HasCycle(thread_num = thread_num)
             g.adj_to_s2v()
@@ -51,7 +70,13 @@ class DataSet:
         out_q.put(output)
 
 
-    def Generate(self, low = 20, high = 80, num_threads = 1):
+    def Generate(self, num_threads = 1):
+
+        # Print dataset info
+        print('Generating ', self.points, ' instances')
+        print('  Number of nodes: ', self.node_range[0], '-', self.node_range[1])
+        print('  Approximate number of edges as a ratio: ', self.edge_range[0], '-', self.edge_range[1])
+        print('  Prob. of adding a cycle: ', self.prob_hc)
 
         # Time 
         start_time = time.time()
@@ -63,7 +88,7 @@ class DataSet:
 
         # Create processes
         for i in range(num_threads):
-            args = {'low':low,'high':high,'thread_num':i,'iters':iters,'out_q':out_q}
+            args = {'thread_num':i,'iters':iters,'out_q':out_q}
             p = multiprocessing.Process(target=self.ConcurrentGen, kwargs=args)
             processes.append(p)
 
@@ -103,12 +128,19 @@ class DataSet:
         mv_dir = 'mv 10fold_idx/ ' + self.dirname + '/'
         os.system(mv_dir)
 
-        # Use all data in each fold for now
-        # Note that train and test are also the same
-        train_data = ''
-        for i in range(0,self.points):
-            train_data += str(i) + '\n'
-
+        # Create 10 fold CV set
+        train_ind = []
+        test_ind = []
+        for j in range(1,11):
+            train_data = ''
+            test_data = ''
+            for i in range(0,self.points):
+                if i < j*self.fold_size or i >= (j+1)*self.fold_size:
+                    train_data += str(i) + '\n'
+                else:
+                    test_data += str(i) + '\n'
+            train_ind.append(train_data)
+            test_ind.append(test_data)
 
         # Create 10fold_idx files
         for i in range(1,11):
@@ -117,14 +149,14 @@ class DataSet:
 
             # Write and move train
             f = open(train_name, 'w')
-            f.writelines(train_data)
+            f.writelines(train_ind[i-1])
             f.close()
             mv_file = 'mv ' + train_name + ' ' + self.dirname + '/10fold_idx'
             os.system(mv_file)
 
             # Write and move test
             f = open(test_name, 'w')
-            f.writelines(train_data)
+            f.writelines(test_ind[i-1])
             f.close()
             mv_file = 'mv ' + test_name + ' ' + self.dirname + '/10fold_idx'
             os.system(mv_file)
