@@ -27,11 +27,20 @@ class Classifier(nn.Module):
             print('unknown gm %s' % cmd_args.gm)
             sys.exit()
 
-        self.s2v = model(latent_dim=cmd_args.latent_dim, 
-                        output_dim=cmd_args.out_dim,
-                        num_node_feats=cmd_args.feat_dim, 
-                        num_edge_feats=0,
-                        max_lv=cmd_args.max_lv)
+        # Call with one edge feature if using loopy_bp model
+        if cmd_args.gm == 'mean_field':
+            self.s2v = model(latent_dim=cmd_args.latent_dim, 
+                            output_dim=cmd_args.out_dim,
+                            num_node_feats=cmd_args.feat_dim, 
+                            num_edge_feats=0,
+                            max_lv=cmd_args.max_lv)
+        elif cmd_args.gm == 'loopy_bp':
+            self.s2v = model(latent_dim=cmd_args.latent_dim, 
+                            output_dim=cmd_args.out_dim,
+                            num_node_feats=cmd_args.feat_dim, 
+                            num_edge_feats=1,
+                            max_lv=cmd_args.max_lv)
+
         out_dim = cmd_args.out_dim
         if out_dim == 0:
             out_dim = cmd_args.latent_dim
@@ -40,25 +49,33 @@ class Classifier(nn.Module):
     def PrepareFeatureLabel(self, batch_graph):
         labels = torch.LongTensor(len(batch_graph))
         n_nodes = 0
+        n_edges = 0
         concat_feat = []
         for i in range(len(batch_graph)):
             labels[i] = batch_graph[i].label
             n_nodes += batch_graph[i].num_nodes
+            n_edges += batch_graph[i].num_edges
             concat_feat += batch_graph[i].node_tags
         
         concat_feat = torch.LongTensor(concat_feat).view(-1, 1)
         node_feat = torch.zeros(n_nodes, cmd_args.feat_dim)
         node_feat.scatter_(1, concat_feat, 1)
+        edge_feat = torch.zeros(2 * n_edges, cmd_args.feat_dim)
+        edge_feat.scatter_(1, torch.LongTensor(np.zeros((2 * n_edges, cmd_args.feat_dim))), 1)
 
         if cmd_args.mode == 'gpu':
-            node_feat = node_feat.cuda() 
+            node_feat = node_feat.cuda()
+            edge_feat = edge_feat.cuda()
             labels = labels.cuda()
 
-        return node_feat, labels
+        return node_feat, edge_feat, labels
 
-    def forward(self, batch_graph): 
-        node_feat, labels = self.PrepareFeatureLabel(batch_graph)
-        embed = self.s2v(batch_graph, node_feat, None)
+    def forward(self, batch_graph):
+        node_feat, edge_feat, labels = self.PrepareFeatureLabel(batch_graph)
+        if cmd_args.gm == 'mean_field':
+            embed = self.s2v(batch_graph, node_feat, None)
+        elif cmd_args.gm == 'loopy_bp':
+            embed = self.s2v(batch_graph, node_feat, edge_feat)
         
         return self.mlp(embed, labels)
 
@@ -97,35 +114,37 @@ if __name__ == '__main__':
     np.random.seed(cmd_args.seed)
     torch.manual_seed(cmd_args.seed)
 
-    train_graphs, test_graphs = load_data()
-    print('# train: %d, # test: %d' % (len(train_graphs), len(test_graphs)))
+    # Iterate through a number of datasets, to train a number of different models
+    for dataset in os.listdir('./data/' + cmd_args.data):
+        train_graphs, test_graphs = load_data(dataset)
+        print('# train: %d, # test: %d' % (len(train_graphs), len(test_graphs)))
 
-    classifier = Classifier()
-    if cmd_args.mode == 'gpu':
-        classifier = classifier.cuda()
-    
-    # Optimizer Options
-    if cmd_args.optim == 'Adagrad':
-        optimizer = optim.Adagrad(classifier.parameters(), lr=cmd_args.learning_rate, lr_decay=cmd_args.lr_decay)
-    
-    elif cmd_args.optim == 'SGD':
-        optimizer = optim.SGD(classifier.parameters(), lr=cmd_args.learning_rate, momentum=cmd_args.momentum)
-
-    else:
-        optimizer = optim.Adam(classifier.parameters(), lr=cmd_args.learning_rate)
-
-    train_idxes = list(range(len(train_graphs)))
-    best_loss = None
-    for epoch in range(cmd_args.num_epochs):
-        random.shuffle(train_idxes)
-        avg_loss = loop_dataset(train_graphs, classifier, train_idxes, optimizer=optimizer)
-        print('\033[92maverage training of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, avg_loss[0], avg_loss[1]))
+        classifier = Classifier()
+        if cmd_args.mode == 'gpu':
+            classifier = classifier.cuda()
         
-        test_loss = loop_dataset(test_graphs, classifier, list(range(len(test_graphs))))
-        print('\033[93maverage test of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, test_loss[0], test_loss[1]))
+        # Optimizer Options
+        if cmd_args.optim == 'Adagrad':
+            optimizer = optim.Adagrad(classifier.parameters(), lr=cmd_args.learning_rate, lr_decay=cmd_args.lr_decay)
+        
+        elif cmd_args.optim == 'SGD':
+            optimizer = optim.SGD(classifier.parameters(), lr=cmd_args.learning_rate, momentum=cmd_args.momentum)
 
-        if best_loss is None or test_loss[0] < best_loss:
-            best_loss = test_loss[0]
-            print('----saving to best model since this is the best valid loss so far.----')
-            torch.save(classifier, cmd_args.save_dir + '/epoch-best.model')
-            # save_args(cmd_args.save_dir + '/epoch-best-args.pkl', cmd_args)
+        else:
+            optimizer = optim.Adam(classifier.parameters(), lr=cmd_args.learning_rate)
+
+        train_idxes = list(range(len(train_graphs)))
+        best_loss = None
+        for epoch in range(cmd_args.num_epochs):
+            random.shuffle(train_idxes)
+            avg_loss = loop_dataset(train_graphs, classifier, train_idxes, optimizer=optimizer)
+            print('\033[92maverage training of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, avg_loss[0], avg_loss[1]))
+            
+            test_loss = loop_dataset(test_graphs, classifier, list(range(len(test_graphs))))
+            print('\033[93maverage test of epoch %d: loss %.5f acc %.5f\033[0m' % (epoch, test_loss[0], test_loss[1]))
+
+            if best_loss is None or test_loss[0] < best_loss:
+                best_loss = test_loss[0]
+                print('----saving to best model since this is the best valid loss so far.----')
+                torch.save(classifier, cmd_args.save_dir + '/epoch-best' + dataset + '.model')
+                # save_args(cmd_args.save_dir + '/epoch-best-args.pkl', cmd_args)
