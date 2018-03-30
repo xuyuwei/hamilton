@@ -15,12 +15,12 @@ class Graph:
         self.G = np.random.uniform(size=[dim, dim])
         self.dim = dim
         self.s2v = ''
-        self.hc = 0
+        self.hc = hc
 
 
         # Adjust ratio to include edges
         if hc == 1:
-            ratio -= (2*dim)/(dim*dim)
+            ratio -= (2*dim)/(dim*(dim-1))
         
         # Set diagonal to 0
         for i in range(0,self.dim):
@@ -50,50 +50,47 @@ class Graph:
     # Concorde executable must be in PATH
     def HasCycle(self, thread_num = 0):
 
-        # Header for file
-        pre_filename = str(thread_num)
-        filename = str(thread_num) + 'input.tsp'
-        writeval = ['NAME: ' + pre_filename + '\n', \
-            'TYPE: TSP (M.~Hofmeister)' + '\n', \
-            'DIMENSION: ' + str(self.dim) + '\n', \
-            'EDGE_WEIGHT_TYPE: EXPLICIT' + '\n', \
-            'EDGE_WEIGHT_FORMAT: FULL_MATRIX' + '\n', \
-            'DISPLAY_DATA_TYPE: NO_DISPLAY' + '\n', \
-            'EDGE_WEIGHT_SECTION' + '\n ']
+    	# Have HC already then we don't need to do this
+    	if self.hc != 1:
+	        # Header for file
+	        pre_filename = str(thread_num)
+	        filename = str(thread_num) + 'input.tsp'
+	        writeval = ['NAME: ' + pre_filename + '\n', \
+	            'TYPE: TSP (M.~Hofmeister)' + '\n', \
+	            'DIMENSION: ' + str(self.dim) + '\n', \
+	            'EDGE_WEIGHT_TYPE: EXPLICIT' + '\n', \
+	            'EDGE_WEIGHT_FORMAT: FULL_MATRIX' + '\n', \
+	            'DISPLAY_DATA_TYPE: NO_DISPLAY' + '\n', \
+	            'EDGE_WEIGHT_SECTION' + '\n ']
 
-        # Add matrix
-        MAX_ROW_SIZE = 16
-        cur_row_size = 0
-        for i in range(0,self.dim):
-            for j in range(0,self.dim):
-                if cur_row_size < MAX_ROW_SIZE:
-                    writeval.append(str(1-(int)(self.G[i,j])) + ' ')
-                    cur_row_size += 1
-                else:
-                    writeval.append(str(1-(int)(self.G[i,j])) + '\n ')
-                    cur_row_size = 0
+	        # Add matrix
+	        MAX_ROW_SIZE = 16
+	        cur_row_size = 0
+	        for i in range(0,self.dim):
+	            for j in range(0,self.dim):
+	                if cur_row_size < MAX_ROW_SIZE:
+	                    writeval.append(str(1-(int)(self.G[i,j])) + ' ')
+	                    cur_row_size += 1
+	                else:
+	                    writeval.append(str(1-(int)(self.G[i,j])) + '\n ')
+	                    cur_row_size = 0
 
-        # Write to file
-        writeval.append('\n EOF')
-        f = open(filename, 'w')
-        f.writelines(writeval)
-        f.close()
+	        # Write to file
+	        writeval.append('\n EOF')
+	        f = open(filename, 'w')
+	        f.writelines(writeval)
+	        f.close()
 
-        # Run concorde on file
-        concorde_out = os.popen('concorde ' + filename + ' 2>/dev/null ').read()
-        
-        # Remove concorde created files
-        #os.system('rm input.* Oinput.*')
-        
-        # Check output to find ham cycle
-        if 'Optimal Solution: 0.00' in concorde_out:
-            self.hc = 1
-        else:
-            self.hc = 0
-
+	        # Run concorde on file
+	        concorde_out = os.popen('concorde ' + filename + ' 2>/dev/null ').read()
+	        
+	        # Check output to find ham cycle
+	        if 'Optimal Solution: 0.00' in concorde_out:
+	            self.hc = 1
+	        else:
+	            self.hc = 0
 
 
-    
     # Print Graph
     def printGraph(self):
         for i in range(0,self.dim):
