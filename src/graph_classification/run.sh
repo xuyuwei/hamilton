@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATA=TWOSETS
+DATA=ACTUAL_DATA
 
 gm=loopy_bp
 
@@ -15,7 +15,7 @@ optim=Adagrad
 momentum=0
 lr_decay=0
 fold=2
-save_path=best-model/0-1_1000.pt
+save_dir=best-model/
 
 python2 main.py \
     -seed 1 \
@@ -32,5 +32,5 @@ python2 main.py \
     -optim $optim \
     -lr_decay $lr_decay \
     -momentum $momentum \
-    -save_path $save_path \
+    -save_dir $save_dir \
     $@
