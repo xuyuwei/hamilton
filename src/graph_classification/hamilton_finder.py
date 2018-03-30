@@ -2,6 +2,8 @@ import argparse
 import torch
 import os
 import networkx as nx
+import re
+from main import Classifier
 from util import S2VGraph
 
 # Regular expression for the model files
@@ -43,11 +45,12 @@ def load_data(data_file):
             g_list.append(S2VGraph(g, node_tags, l))
     for g in g_list:
         g.label = label_dict[g.label]
+    return g_list
     
 
 def import_models(model_files):
     # Load models
-    for file in model_file:
+    for file in model_files:
         model = torch.load(file)
         # get the edge % the model has been trained on
         re_match = re.search(MODEL_FILE_REGEX, os.path.basename(file))
@@ -55,7 +58,14 @@ def import_models(model_files):
         MODELS.append([lower_p, upper_p, model])
     MODELS.sort()
 
+def get_prediction(graph):
+    # placeholder to just choose first model
+    return MODELS[0][-1].forward([graph])
+    
 if __name__=='__main__':
-    load_data('data/ACTUAL_DATA/01-03_50-100_50/01-03_50-100_50.txt')
+    import_models(['best-model/test-model/epoch-best01-03_test.model'])
+    graphs = load_data('data/test_data/simple.txt')
+    for g in graphs:
+        print get_prediction(g)
 
         
