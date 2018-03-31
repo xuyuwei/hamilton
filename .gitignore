@@ -2,3 +2,4 @@
 *.pyc
 src/s2v_lib/build/
 src/venv/
+.idea/

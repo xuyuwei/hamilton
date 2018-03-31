@@ -29,8 +29,8 @@ cmd_opt.add_argument('-lr_decay', type=float, default=0., help='set decay of lea
 cmd_opt.add_argument('-save_dir', type=str, default='.', help='dir to save model in')
 
 cmd_args, _ = cmd_opt.parse_known_args()
-
 print(cmd_args)
+
 
 class S2VGraph(object):
     def __init__(self, g, node_tags, label):
@@ -40,10 +40,10 @@ class S2VGraph(object):
 
         x, y = zip(*g.edges())
         self.num_edges = len(x)        
-        self.edge_pairs = np.ndarray(shape=(self.num_edges, 2), dtype=np.int32)
-        self.edge_pairs[:, 0] = x
-        self.edge_pairs[:, 1] = y
-        self.edge_pairs = self.edge_pairs.flatten()
+        self.edges = np.ndarray(shape=(self.num_edges, 2), dtype=np.int32)
+        self.edges[:, 0] = x
+        self.edges[:, 1] = y
+        self.edge_pairs = self.edges.flatten()
 
     # helper for getting some of the graph info
     def get_info(self):
@@ -53,7 +53,34 @@ class S2VGraph(object):
             'label': self.label,
             'num_edges': self.num_edges,
         })
-        
+
+    # return index of random edge from self.edges that is not in *chosen*
+    def choose_random_edge(self, chosen):
+        index = np.random.randint(0, len(self.edges)-len(chosen))
+        count = 0
+        for i in range(len(self.edges)):
+            if i in chosen:
+                continue
+            if count == index:
+                return i
+            count += 1
+        raise Exception("WTF is going on, there are no more edges to choose from")
+
+    # given indices, get corresponding edges from graph
+    def get_edges(self, indices):
+        return np.take(self.edges, indices, 0)
+
+    # given indices, remove edges in graph
+    def remove_edges(self, indices):
+        edges = np.delete(np.copy(self.edges), indices, 0)
+        self.num_edges = len(edges)
+        self.edge_pairs = edges.flatten()
+
+    def reset(self):
+        self.num_edges = len(self.edges)
+        self.edge_pairs = self.edges.flatten()
+
+
 def load_data(dataset):
     print('loading data')
 
@@ -66,8 +93,8 @@ def load_data(dataset):
         for i in range(n_g):
             row = f.readline().strip().split()
             n, l = [int(w) for w in row]  # number of vertices, label
-            # label_dict basically creates a dictionary that maps arbitrary labels to integer labels (0, 1, ..)
-            # not really used in our case
+            # label_dict basically creates a dictionary that maps arbitrary labels
+            # to integer labels (0, 1, ..) not really used in our case
             if not l in label_dict: 
                 mapped = len(label_dict)
                 label_dict[l] = mapped
@@ -100,4 +127,4 @@ def load_data(dataset):
     test_idxes = np.loadtxt('./data/%s/%s/10fold_idx/test_idx-%d.txt' % (cmd_args.data, dataset, cmd_args.fold), dtype=np.int32).tolist()
 
     return [g_list[i] for i in train_idxes], [g_list[i] for i in test_idxes]
-    
+
