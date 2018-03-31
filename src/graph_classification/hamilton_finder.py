@@ -128,4 +128,5 @@ if __name__ == '__main__':
     import_models(model_files)
     graphs = load_data('data/test_data/test.txt')
     for g in graphs:
+        # print(g)
         print get_hamilton(g)

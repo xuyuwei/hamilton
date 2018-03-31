@@ -46,6 +46,17 @@ class S2VGraph(object):
         self.edges[:, 1] = y
         self.edge_pairs = self.edges.flatten()
 
+    # helpful for printing graphs
+    def __repr__(self):
+        return_str = "Graph {\n" \
+                   + "\tnum_nodes : " + str(self.num_nodes) + "\n" \
+                   + "\tnode_tags : " + str(self.node_tags) + "\n" \
+                   + "\tlabel : " + str(self.label) + "\n" \
+                   + "\tnum_edges : " + str(self.num_edges) + "\n" \
+                   + "\tedge_pairs : " + str(self.edge_pairs) + "\n" \
+                   + "}"
+        return return_str
+
     # helper for getting some of the graph info
     def get_info(self):
         return ({
