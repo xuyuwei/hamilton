@@ -14,7 +14,7 @@ cmd_opt.add_argument('-gm', default='mean_field', help='mean_field/loopy_bp')
 cmd_opt.add_argument('-data', default=None, help='data folder name')
 cmd_opt.add_argument('-batch_size', type=int, default=128, help='minibatch size')
 cmd_opt.add_argument('-seed', type=int, default=1, help='seed')
-cmd_opt.add_argument('-feat_dim', type=int, default=0, help='dimension of node feature')
+cmd_opt.add_argument('-feat_dim', type=int, default=1, help='dimension of node feature')
 cmd_opt.add_argument('-num_class', type=int, default=0, help='#classes')
 cmd_opt.add_argument('-fold', type=int, default=1, help='fold (1..10)')
 cmd_opt.add_argument('-num_epochs', type=int, default=2000, help='number of epochs')
@@ -45,6 +45,15 @@ class S2VGraph(object):
         self.edge_pairs[:, 1] = y
         self.edge_pairs = self.edge_pairs.flatten()
 
+    # helper for getting some of the graph info
+    def get_info(self):
+        return ({
+            'num_nodes': self.num_nodes,
+            'node_tags': self.node_tags,
+            'label': self.label,
+            'num_edges': self.num_edges,
+        })
+        
 def load_data(dataset):
     print('loading data')
 
@@ -53,11 +62,13 @@ def load_data(dataset):
     feat_dict = {}
 
     with open('./data/%s/%s/%s.txt' % (cmd_args.data, dataset, dataset), 'r') as f:
-        n_g = int(f.readline().strip())
+        n_g = int(f.readline().strip())  # number of graphs in dataset
         for i in range(n_g):
             row = f.readline().strip().split()
-            n, l = [int(w) for w in row]
-            if not l in label_dict:
+            n, l = [int(w) for w in row]  # number of vertices, label
+            # label_dict basically creates a dictionary that maps arbitrary labels to integer labels (0, 1, ..)
+            # not really used in our case
+            if not l in label_dict: 
                 mapped = len(label_dict)
                 label_dict[l] = mapped
             g = nx.Graph()

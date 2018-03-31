@@ -4,12 +4,13 @@ import os
 import networkx as nx
 import re
 from main import Classifier
-from util import S2VGraph
+from util import S2VGraph, cmd_args
 
 # Regular expression for the model files
 MODEL_FILE_REGEX = r'epoch-best([0-9]+-[0-9]+)\w+'
 MODELS = []
 
+# basically same function as the one in util.py but without 10-fold
 def load_data(data_file):
     print('loading data')
 
@@ -45,6 +46,8 @@ def load_data(data_file):
             g_list.append(S2VGraph(g, node_tags, l))
     for g in g_list:
         g.label = label_dict[g.label]
+    cmd_args.num_class = len(label_dict)
+    cmd_args.feat_dim = len(feat_dict)
     return g_list
     
 
@@ -58,14 +61,18 @@ def import_models(model_files):
         MODELS.append([lower_p, upper_p, model])
     MODELS.sort()
 
-def get_prediction(graph):
+# get the model prediction of whether the graph contains a hamilton cycle
+def contains_hamilton(graph):
     # placeholder to just choose first model
-    return MODELS[0][-1].forward([graph])
+    res, _, _ = MODELS[0][-1].forward([graph])
+    res.max(1)[-1] # get the index with the larger element
     
 if __name__=='__main__':
     import_models(['best-model/test-model/epoch-best01-03_test.model'])
     graphs = load_data('data/test_data/simple.txt')
     for g in graphs:
-        print get_prediction(g)
+        print 'Prediction:'
+        print contains_hamilton(g)
+        print 'ok'
 
         
