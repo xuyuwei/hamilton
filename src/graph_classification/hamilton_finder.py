@@ -92,7 +92,8 @@ def get_hamilton(graph):
         return []
     
     cycle = set()
-    B = set()  # set B from the algorithm
+    B = set()       # set B from the algorithm
+    used = set()    # set of edges already chosen
     while True:
         # if we find a cycle
         if len(cycle) == graph.num_nodes-1:
@@ -105,7 +106,8 @@ def get_hamilton(graph):
             return []
 
         # choose a random edge that has not been used yet
-        edge_index = graph.choose_random_edge(cycle.union(B))
+        edge_index = graph.choose_random_edge(used)
+        used.add(edge_index)
 
         # add this edge to B, remove B from graph
         B.add(edge_index)
