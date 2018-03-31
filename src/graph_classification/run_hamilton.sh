@@ -15,6 +15,7 @@ momentum=0
 lr_decay=0
 fold=2
 save_dir=best-model/
+models_dir=actual-models-cpu/
 
 python2 hamilton_finder.py \
     -seed 1 \
@@ -32,4 +33,5 @@ python2 hamilton_finder.py \
     -lr_decay $lr_decay \
     -momentum $momentum \
     -save_dir $save_dir \
+    -models_dir $models_dir \
     $@

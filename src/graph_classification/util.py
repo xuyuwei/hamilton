@@ -27,6 +27,7 @@ cmd_opt.add_argument('-optim', default='Adam', help='optimizer')
 cmd_opt.add_argument('-momentum', type=float, default=0., help='momentum')
 cmd_opt.add_argument('-lr_decay', type=float, default=0., help='set decay of learning rate')
 cmd_opt.add_argument('-save_dir', type=str, default='.', help='dir to save model in')
+cmd_opt.add_argument('-models_dir', type=str, default='.', help='dir containing trained models')
 
 cmd_args, _ = cmd_opt.parse_known_args()
 print(cmd_args)
@@ -65,6 +66,10 @@ class S2VGraph(object):
                 return i
             count += 1
         raise Exception("WTF is going on, there are no more edges to choose from")
+
+    # get sparsity of graph
+    def get_sparsity(self):
+        return 2 * float(self.num_edges) / (self.num_nodes * (self.num_nodes - 1))
 
     # given indices, get corresponding edges from graph
     def get_edges(self, indices):

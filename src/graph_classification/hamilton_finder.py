@@ -8,7 +8,9 @@ from util import S2VGraph, cmd_args
 
 # Regular expression for the model files
 MODEL_FILE_REGEX = r'epoch-best([0-9]+-[0-9]+)\w+'
-MODELS = []
+
+# using buckets for models
+model_buckets = [[] for i in range(35)]
 
 
 # basically same function as the one in util.py but without 10-fold
@@ -58,16 +60,27 @@ def import_models(model_files):
         model = torch.load(f)
         # get the edge % the model has been trained on
         re_match = re.search(MODEL_FILE_REGEX, os.path.basename(f))
-        lower_p, upper_p = re_match.group(1).split('-')
-        MODELS.append([lower_p, upper_p, model])
-    MODELS.sort()
+        lower_p, upper_p = list(map(int, re_match.group(1).split('-')))
+        for i in range(lower_p, upper_p):
+            model_buckets[i].append(model)
+    print map(len, model_buckets)
 
 
 # get the model prediction of whether the graph contains a hamilton cycle
 def contains_hamilton(graph):
-    # placeholder to just choose first model
-    res, _, _ = MODELS[0][-1].forward([graph])
-    return int(res.max(1)[-1]) # get the index with the larger element
+    sparsity = int(graph.get_sparsity() * 100)
+    if sparsity > len(model_buckets):
+        raise Exception('We need a model for this sparsity level %d' % sparsity)
+
+    # hack for now: only one model needs to return true
+    if len(model_buckets[sparsity]) == 0:
+        raise Exception('We need a model for this sparsity level %d' % sparsity)
+
+    for model in model_buckets[sparsity]:
+        output, _, _ = model.forward([graph])
+        if int(output.max(1)[-1]) == 1:
+            return True
+    return False
 
 
 # get hamilton cycle from a graph according to our algorithm
@@ -108,7 +121,11 @@ def get_hamilton(graph):
 
 
 if __name__ == '__main__':
-    import_models(['best-model/test-model/epoch-best01-03_test.model'])
-    graphs = load_data('data/test_data/simple.txt')
+    model_files = []
+    for f in os.listdir(cmd_args.models_dir):
+        if re.search(MODEL_FILE_REGEX, f):
+            model_files.append(os.path.join(cmd_args.models_dir, f))
+    import_models(model_files)
+    graphs = load_data('data/test_data/test.txt')
     for g in graphs:
         print get_hamilton(g)

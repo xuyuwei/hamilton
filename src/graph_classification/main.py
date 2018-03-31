@@ -115,7 +115,10 @@ if __name__ == '__main__':
     torch.manual_seed(cmd_args.seed)
 
     # Iterate through a number of datasets, to train a number of different models
-    for dataset in os.listdir('./data/' + cmd_args.data):
+    data_dir = os.path.join('./data/', cmd_args.data)
+    for dataset in os.listdir(data_dir):
+        if not os.path.isdir(os.path.join(data_dir, dataset)):
+            continue
         train_graphs, test_graphs = load_data(dataset)
         print('# train: %d, # test: %d' % (len(train_graphs), len(test_graphs)))
 
