@@ -89,18 +89,18 @@ def get_hamilton(graph):
         print 'no cycle'
         return []
 
+    start = []
     cycle = set()
     B = set()       # set B from the algorithm
-    used = set()    # set of edges already chosen
-    while True:
-        # if we find a cycle
-        if len(cycle) == graph.num_nodes-1:
-            print 'found hamilton cycle'
-            return graph.get_edges(list(cycle))
+    used_edges = set()    # set of edges already chosen
 
-        # if we go through all the edges, we must have not found the cycle
-        if len(cycle) + len(B) == graph.num_edges:
-            print "we found %d/%d of the edges in the hamilton cycle" % (len(cycle), graph.num_nodes-1)
+    # get first edge in hamilton cycle
+    while True:
+        if len(start) >= 1:
+            break
+
+        if len(used) == graph.num_edges:
+            print 'Could not find a single edge in hamilton cycle'
             return []
 
         # choose a random edge that has not been used yet
@@ -113,11 +113,60 @@ def get_hamilton(graph):
 
         # if there exists no hamilton cycle, that edge must be in the cycle
         if not contains_hamilton(graph):
-            cycle.add(edge_index)
+            start = list(graph.get_edges([edge_index]).flatten())
             B.remove(edge_index)
 
         # reset the graphs edges to show all of them
         graph.reset()
+
+def find_hamilton(graph, start, used_edges):
+    visited = [False for i in range(graph.num_nodes)]
+    for s in start:
+        visited[s] = True
+    dfs(graph, start, visited)
+
+
+def dfs(graph, cur, visited, used_edges):
+    last_vertex = cur[-1]
+    vertex_edges, endpoints = graph.get_vertex_edges(last_vertex)
+    possible_next_vertices = [] # possible next vertices
+    edges_tried = []
+    for i, e in enumerate(endpoints):
+        # if the edge connects the last vertex and the first one,
+        # we've found the cycle
+        if len(cur) == graph.num_nodes and e == cur[0]:
+            print "FOUND THE CYCLE"
+            return cur
+
+        if visited[e]:
+            used_edges.add(vertex_edges[i])
+            continue
+
+        used_edges.add(vertex_edges[i])
+        edges_tried.append(vertex_edges[i])
+        graph.remove_edges(list(used_edges))
+        if not contains_hamilton(graph):
+            possible_next_vertices.append(e)
+            used_edges.remove(vertex_edges[i])
+        graph.reset()
+
+    for next in possible_next_vertices:
+        # dfs with recursive backtracking
+        cur.append(next)
+        visited[next] = True
+
+        # dfs
+        ans = dfs(graph, cur, visited, used_edges)
+        if ans: # if we get a legit cycle, return it
+            return ans
+
+        # backtrack
+        cur = cur[:-1]
+        visited[next] = False
+
+    for e in edges_tried:
+        used_edges.remove(e)
+    return None
 
 
 def count_nodes(nodes):

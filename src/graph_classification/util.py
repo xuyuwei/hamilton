@@ -86,6 +86,23 @@ class S2VGraph(object):
     def get_edges(self, indices):
         return np.take(self.edges, indices, 0)
 
+    # get edges connecting to a vertex
+    def get_vertex_edges(self, vertex):
+        indices = []    # the indices of the edges
+        endpoints = []  # endpoints of edges
+        for i, edge in enumerate(self.edges):
+            if edge[0] != vertex and edge[1] != vertex:
+                continue
+            if edge[0] == vertex:
+                endpoints.append(edge[1])
+            else:
+                endpoints.append(edge[0])
+            indices.append(i)
+
+        return indices, endpoints
+
+
+
     # given indices, remove edges in graph
     def remove_edges(self, indices):
         edges = np.delete(np.copy(self.edges), indices, 0)
