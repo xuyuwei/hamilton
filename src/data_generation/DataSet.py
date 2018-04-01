@@ -8,7 +8,7 @@ import numpy as np
 class DataSet:
 
     def __init__(self, points = 11000, edge_range = [0.02,0.2], node_range = [20, 100], prob_hc = 0):
-        
+
         self.points = points
         self.edge_range = edge_range
         self.node_range = node_range
@@ -46,10 +46,10 @@ class DataSet:
         # Generate data
         output = ''
         for i in range(0,iters):
-            
+
             if (i+1)%500 == 0:
                 print('Iter: ', i+1, '   Cycle: ', self.num_hc, '  No Cycle: ' ,i-self.num_hc, 'Thread Num: ', thread_num)
-            
+
             if i == iters-1:
                 print('Thread ', thread_num, ' is done')
 
@@ -61,7 +61,7 @@ class DataSet:
                 g = Graph.Graph(dim = n, ratio = edges, hc = 1)
             else:
                 g = Graph.Graph(dim = n, ratio = edges)
-            
+
             g.HasCycle(thread_num = thread_num)
             g.adj_to_s2v()
             if g.hc:
@@ -78,7 +78,7 @@ class DataSet:
         print('  Approximate number of edges as a ratio: ', self.edge_range[0], '-', self.edge_range[1])
         print('  Prob. of adding a cycle: ', self.prob_hc)
 
-        # Time 
+        # Time
         start_time = time.time()
 
         # Genereate data in parallel
@@ -111,7 +111,7 @@ class DataSet:
 
 
     def ToDirectory(self):
-        
+
         # Create directory
         mk_dir = 'mkdir ' + self.dirname
         os.system(mk_dir)
@@ -163,7 +163,7 @@ class DataSet:
 
 
     def ToDataFolder(self):
-        mv = 'mv ' + self.dirname + '/' 
+        mv = 'mv ' + self.dirname + '/'
         mv += ' ../graph_classification/data/'
         os.system(mv)
 

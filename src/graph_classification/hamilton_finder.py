@@ -52,15 +52,16 @@ def load_data(data_file):
     cmd_args.num_class = len(label_dict)
     cmd_args.feat_dim = len(feat_dict)
     return g_list
-    
+
 
 def import_models(model_files):
     # Load models
     for f in model_files:
-        model = torch.load(f)
+        model = torch.load(f, map_location=lambda storage, loc: storage)
         # get the edge % the model has been trained on
         re_match = re.search(MODEL_FILE_REGEX, os.path.basename(f))
         lower_p, upper_p = list(map(int, re_match.group(1).split('-')))
+        print f, lower_p, upper_p
         for i in range(lower_p, upper_p):
             model_buckets[i].append(model)
     print map(len, model_buckets)
@@ -76,10 +77,13 @@ def contains_hamilton(graph):
     if len(model_buckets[sparsity]) == 0:
         raise Exception('We need a model for this sparsity level %d' % sparsity)
 
+    count = 0
     for model in model_buckets[sparsity]:
-        output, _, _ = model.forward([graph])
+        output, loss, x = model([graph])
         if int(output.max(1)[-1]) == 1:
-            return True
+            count += 1
+    if float(count)/len(model_buckets[sparsity]) >= .5:
+        return True
     return False
 
 
@@ -90,14 +94,14 @@ def get_hamilton(graph):
     if not contains_hamilton(graph):
         print 'no cycle'
         return []
-    
+
     cycle = set()
     B = set()       # set B from the algorithm
     used = set()    # set of edges already chosen
     while True:
         # if we find a cycle
         if len(cycle) == graph.num_nodes-1:
-            print 'found hamilton cycle:'
+            print 'found hamilton cycle'
             return graph.get_edges(list(cycle))
 
         # if we go through all the edges, we must have not found the cycle
@@ -122,6 +126,16 @@ def get_hamilton(graph):
         graph.reset()
 
 
+def count_nodes(nodes):
+    count = {}
+    for n in nodes:
+        if n not in count:
+            count[n] = 1
+        else:
+            count[n] += 1
+    return count
+
+
 if __name__ == '__main__':
     model_files = []
     for f in os.listdir(cmd_args.models_dir):
@@ -129,6 +143,14 @@ if __name__ == '__main__':
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
     graphs = load_data('data/test_data/test.txt')
+    score = 0
     for g in graphs:
-        # print(g)
-        print get_hamilton(g)
+        contains = contains_hamilton(g)
+        sparsity = int(g.get_sparsity() * 100)
+        edges = get_hamilton(g)
+        predict = 0
+        if len(edges) > 0:
+            predict = 1
+        if predict == g.label:
+            score += 1
+    print (float(score) / len(graphs))

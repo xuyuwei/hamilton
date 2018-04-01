@@ -40,7 +40,7 @@ class S2VGraph(object):
         self.label = label
 
         x, y = zip(*g.edges())
-        self.num_edges = len(x)        
+        self.num_edges = len(x)
         self.edges = np.ndarray(shape=(self.num_edges, 2), dtype=np.int32)
         self.edges[:, 0] = x
         self.edges[:, 1] = y
@@ -80,7 +80,7 @@ class S2VGraph(object):
 
     # get sparsity of graph
     def get_sparsity(self):
-        return 2 * float(self.num_edges) / (self.num_nodes * (self.num_nodes - 1))
+        return 2 * float(self.num_edges) / (self.num_nodes * (self.num_nodes-1))
 
     # given indices, get corresponding edges from graph
     def get_edges(self, indices):
@@ -111,7 +111,7 @@ def load_data(dataset):
             n, l = [int(w) for w in row]  # number of vertices, label
             # label_dict basically creates a dictionary that maps arbitrary labels
             # to integer labels (0, 1, ..) not really used in our case
-            if not l in label_dict: 
+            if not l in label_dict:
                 mapped = len(label_dict)
                 label_dict[l] = mapped
             g = nx.Graph()
@@ -143,4 +143,3 @@ def load_data(dataset):
     test_idxes = np.loadtxt('./data/%s/%s/10fold_idx/test_idx-%d.txt' % (cmd_args.data, dataset, cmd_args.fold), dtype=np.int32).tolist()
 
     return [g_list[i] for i in train_idxes], [g_list[i] for i in test_idxes]
-

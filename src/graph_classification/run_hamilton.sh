@@ -1,21 +1,23 @@
 #!/bin/bash
 
-DATA=ACTUAL_DATA
+DATA=ACTUAL_DATA/
 
-gm=loopy_bp
+gm=mean_field
 LV=3
-CONV_SIZE=64
-FP_LEN=64
+CONV_SIZE=128
+FP_LEN=0
 n_hidden=128
 bsize=20
 num_epochs=10
 learning_rate=0.1
 optim=Adagrad
 momentum=0
-lr_decay=0
-fold=2
+lr_decay=0.
+fold=1
+save_dir=best-mode
+
 save_dir=best-model/
-models_dir=actual-models-cpu/
+models_dir=actual-models/
 
 python2 hamilton_finder.py \
     -seed 1 \
