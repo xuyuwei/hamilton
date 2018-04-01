@@ -18,7 +18,6 @@ def load_data(data_file):
     print('loading data')
 
     g_list = []
-    label_dict = {}
     feat_dict = {}
 
     with open(data_file, 'r') as f:
@@ -26,9 +25,6 @@ def load_data(data_file):
         for i in range(n_g):
             row = f.readline().strip().split()
             n, l = [int(w) for w in row]
-            if not l in label_dict:
-                mapped = len(label_dict)
-                label_dict[l] = mapped
             g = nx.Graph()
             node_tags = []
             n_edges = 0
@@ -47,9 +43,7 @@ def load_data(data_file):
             assert len(g.edges()) * 2 == n_edges
             assert len(g) == n
             g_list.append(S2VGraph(g, node_tags, l))
-    for g in g_list:
-        g.label = label_dict[g.label]
-    cmd_args.num_class = len(label_dict)
+    cmd_args.num_class = 2
     cmd_args.feat_dim = len(feat_dict)
     return g_list
 

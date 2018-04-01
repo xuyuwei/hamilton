@@ -15,7 +15,7 @@ cmd_opt.add_argument('-data', default=None, help='data folder name')
 cmd_opt.add_argument('-batch_size', type=int, default=128, help='minibatch size')
 cmd_opt.add_argument('-seed', type=int, default=1, help='seed')
 cmd_opt.add_argument('-feat_dim', type=int, default=1, help='dimension of node feature')
-cmd_opt.add_argument('-num_class', type=int, default=0, help='#classes')
+cmd_opt.add_argument('-num_class', type=int, default=2, help='#classes')
 cmd_opt.add_argument('-fold', type=int, default=1, help='fold (1..10)')
 cmd_opt.add_argument('-num_epochs', type=int, default=2000, help='number of epochs')
 cmd_opt.add_argument('-latent_dim', type=int, default=64, help='dimension of latent layers')
@@ -101,7 +101,6 @@ def load_data(dataset):
     print('loading data')
 
     g_list = []
-    label_dict = {}
     feat_dict = {}
 
     with open('./data/%s/%s/%s.txt' % (cmd_args.data, dataset, dataset), 'r') as f:
@@ -109,11 +108,6 @@ def load_data(dataset):
         for i in range(n_g):
             row = f.readline().strip().split()
             n, l = [int(w) for w in row]  # number of vertices, label
-            # label_dict basically creates a dictionary that maps arbitrary labels
-            # to integer labels (0, 1, ..) not really used in our case
-            if not l in label_dict:
-                mapped = len(label_dict)
-                label_dict[l] = mapped
             g = nx.Graph()
             node_tags = []
             n_edges = 0
@@ -125,16 +119,13 @@ def load_data(dataset):
                     mapped = len(feat_dict)
                     feat_dict[row[0]] = mapped
                 node_tags.append(feat_dict[row[0]])
-
                 n_edges += row[1]
                 for k in range(2, len(row)):
                     g.add_edge(j, row[k])
             assert len(g.edges()) * 2 == n_edges
             assert len(g) == n
             g_list.append(S2VGraph(g, node_tags, l))
-    for g in g_list:
-        g.label = label_dict[g.label]
-    cmd_args.num_class = len(label_dict)
+    cmd_args.num_class = 2  # each graph is either 0 or 1
     cmd_args.feat_dim = len(feat_dict)
     print('# classes: %d' % cmd_args.num_class)
     print('# node features: %d' % cmd_args.feat_dim)
