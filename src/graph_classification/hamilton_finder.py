@@ -3,6 +3,7 @@ import torch
 import os
 import networkx as nx
 import re
+import numpy as np
 from main import Classifier
 from util import S2VGraph, cmd_args
 
@@ -94,23 +95,24 @@ def get_hamilton(graph):
     used = set()    # set of edges already chosen
     while True:
         # if we find a cycle
-        if len(cycle) == graph.num_nodes-1:
+        if len(cycle) == graph.num_nodes:
             print 'found hamilton cycle'
             return graph.get_edges(list(cycle))
 
         # if we go through all the edges, we must have not found the cycle
-        if len(cycle) + len(B) == graph.num_edges:
-            print "we found %d/%d of the edges in the hamilton cycle" % (len(cycle), graph.num_nodes-1)
-            return []
+        if len(used) == graph.num_edges:
+            print "we found %d/%d of the edges in the hamilton cycle" % (len(cycle), graph.num_nodes)
+            return graph.get_edges(list(cycle))
 
         # choose a random edge that has not been used yet
         edge_index = graph.choose_random_edge(used)
+        edge = graph.get_edges(edge_index)
+
         used.add(edge_index)
 
         # add this edge to B, remove B from graph
         B.add(edge_index)
         graph.remove_edges(list(B))
-
         # if there exists no hamilton cycle, that edge must be in the cycle
         if not contains_hamilton(graph):
             cycle.add(edge_index)
@@ -130,20 +132,39 @@ def count_nodes(nodes):
     return count
 
 
+# helper to verify hamilton cycles
+def is_hamilton_cycle(edges):
+    count = {}
+    for v in np.array(edges).flatten():
+        if v not in count:
+            count[v] = 0
+        count[v] += 1
+    print count
+    for c in count:
+        if count[c] != 2:
+            return False
+    return True
+
+
 if __name__ == '__main__':
     model_files = []
     for f in os.listdir(cmd_args.models_dir):
         if re.search(MODEL_FILE_REGEX, f):
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
-    graphs = load_data('data/test_data/test.txt')
+    graphs = load_data('data/test_data/test.txt')[1:2]
     score = 0
     for g in graphs:
+        print g.num_edges
         contains = contains_hamilton(g)
         sparsity = int(g.get_sparsity() * 100)
         edges = get_hamilton(g)
         predict = 0
         if len(edges) > 0:
+            if is_hamilton_cycle(edges):
+                print "confirmed cycle"
+            else:
+                print 'not a cycle tho'
             predict = 1
         if predict == g.label:
             score += 1
