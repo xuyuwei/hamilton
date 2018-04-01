@@ -3,6 +3,7 @@ import torch
 import os
 import networkx as nx
 import re
+import numpy as np
 from main import Classifier
 from util import S2VGraph, cmd_args
 
@@ -91,7 +92,6 @@ def get_hamilton(graph):
 
     start = []
     cycle = set()
-    B = set()       # set B from the algorithm
     used_edges = set()    # set of edges already chosen
 
     # get first edge in hamilton cycle
@@ -99,61 +99,86 @@ def get_hamilton(graph):
         if len(start) >= 1:
             break
 
-        if len(used) == graph.num_edges:
+        if len(used_edges) == graph.num_edges:
             print 'Could not find a single edge in hamilton cycle'
             return []
 
         # choose a random edge that has not been used yet
-        edge_index = graph.choose_random_edge(used)
-        used.add(edge_index)
+        edge_index = graph.choose_random_edge(used_edges)
+        edge = graph.get_edges(edge_index)
 
-        # add this edge to B, remove B from graph
-        B.add(edge_index)
-        graph.remove_edges(list(B))
+        used_edges.add(edge_index)
 
+        graph.remove_edges(list(used_edges))
         # if there exists no hamilton cycle, that edge must be in the cycle
         if not contains_hamilton(graph):
             start = list(graph.get_edges([edge_index]).flatten())
-            B.remove(edge_index)
+            used_edges.remove(edge_index)
 
         # reset the graphs edges to show all of them
         graph.reset()
+
+    return find_hamilton(graph, start, used_edges)
+
 
 def find_hamilton(graph, start, used_edges):
     visited = [False for i in range(graph.num_nodes)]
     for s in start:
         visited[s] = True
-    dfs(graph, start, visited)
+    return dfs(graph, start, visited, used_edges)
 
 
 def dfs(graph, cur, visited, used_edges):
+    first_vertex = cur[0]
     last_vertex = cur[-1]
-    vertex_edges, endpoints = graph.get_vertex_edges(last_vertex)
-    possible_next_vertices = [] # possible next vertices
+
+    first_edge_indices, first_edges = graph.get_vertex_edges(first_vertex)
+    last_edge_indices, last_edges = graph.get_vertex_edges(last_vertex)
+    edge_indices = first_edge_indices + last_edge_indices
+    all_possible_edges = first_edges + last_edges
+
+    possible_next_edge = [] # possible next vertices
     edges_tried = []
-    for i, e in enumerate(endpoints):
+
+    # print cur
+    # print "edge_indices", edge_indices
+    # print "all_possible_edges:", all_possible_edges
+    # print 'used_edges:', used_edges
+
+    for i, edge in enumerate(all_possible_edges):
+        start, end = edge
         # if the edge connects the last vertex and the first one,
         # we've found the cycle
-        if len(cur) == graph.num_nodes and e == cur[0]:
-            print "FOUND THE CYCLE"
-            return cur
-
-        if visited[e]:
-            used_edges.add(vertex_edges[i])
+        if len(cur) == graph.num_nodes:
+            if sorted(edge) == sorted([first_vertex, last_vertex]):
+                print "FOUND THE CYCLE"
+                return cur
             continue
 
-        used_edges.add(vertex_edges[i])
-        edges_tried.append(vertex_edges[i])
+        if visited[end]:
+            if start == first_vertex and end != cur[1]:
+                used_edges.add(edge_indices[i])
+            elif end == last_vertex and end != cur[-2]:
+                used_edges.add(edge_indices[i])
+            continue
+
+        used_edges.add(edge_indices[i])
+        edges_tried.append(edge_indices[i])
         graph.remove_edges(list(used_edges))
         if not contains_hamilton(graph):
-            possible_next_vertices.append(e)
-            used_edges.remove(vertex_edges[i])
+            possible_next_edge.append(edge)
+            used_edges.remove(edge_indices[i])
         graph.reset()
 
-    for next in possible_next_vertices:
+    for edge in possible_next_edge:
         # dfs with recursive backtracking
-        cur.append(next)
-        visited[next] = True
+        start, end = edge
+        cur_copy = cur[:]
+        if start == first_vertex:
+            cur = [end] + cur
+        else:
+            cur.append(end)
+        visited[end] = True
 
         # dfs
         ans = dfs(graph, cur, visited, used_edges)
@@ -161,11 +186,12 @@ def dfs(graph, cur, visited, used_edges):
             return ans
 
         # backtrack
-        cur = cur[:-1]
-        visited[next] = False
+        cur = cur_copy
+        visited[end] = False
 
     for e in edges_tried:
-        used_edges.remove(e)
+        if e in used_edges:
+            used_edges.remove(e)
     return None
 
 
@@ -179,20 +205,36 @@ def count_nodes(nodes):
     return count
 
 
+# helper to verify hamilton cycles
+def is_hamilton_cycle(edges):
+    count = {}
+    for v in np.array(edges).flatten():
+        if v not in count:
+            count[v] = 0
+        count[v] += 1
+    print count
+    for c in count:
+        if count[c] != 2:
+            return False
+    return True
+
+
 if __name__ == '__main__':
     model_files = []
     for f in os.listdir(cmd_args.models_dir):
         if re.search(MODEL_FILE_REGEX, f):
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
-    graphs = load_data('data/test_data/test.txt')
+    graphs = load_data('data/test_data/test.txt')[1:3]
     score = 0
     for g in graphs:
+        print g.num_edges
         contains = contains_hamilton(g)
         sparsity = int(g.get_sparsity() * 100)
         edges = get_hamilton(g)
         predict = 0
-        if len(edges) > 0:
+        if edges:
+            print edges
             predict = 1
         if predict == g.label:
             score += 1
