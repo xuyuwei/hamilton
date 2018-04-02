@@ -56,9 +56,9 @@ def import_models(model_files):
         # get the edge % the model has been trained on
         re_match = re.search(MODEL_FILE_REGEX, os.path.basename(f))
         lower_p, upper_p = list(map(int, re_match.group(1).split('-')))
-        print f, lower_p, upper_p
+        # print f, lower_p, upper_p
         for i in range(lower_p, upper_p):
-            model_buckets[i].append(model)
+            model_buckets[i].append([f, model])
     print map(len, model_buckets)
 
 
@@ -76,7 +76,7 @@ def contains_hamilton(graph):
 
     count = 0
 
-    for model in model_buckets[sparsity]:
+    for model_name, model in model_buckets[sparsity]:
         output, loss, x = model([graph])
         if int(output.max(1)[-1]) == 1:
             count += 1
@@ -158,22 +158,20 @@ if __name__ == '__main__':
         if re.search(MODEL_FILE_REGEX, f):
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
-    graphs = load_data('data/test_data/test.txt')[0:30]
+    graphs = load_data('data/ACTUAL_DATA/09-10_20-100_30/09-10_20-100_30.txt')[0:100]
     score = 0
     for g in graphs:
-        # print g.num_nodes, g.label, g.num_edges
-        contains = contains_hamilton(g)
+        contains = int(contains_hamilton(g))
+        # print g.num_nodes, g.label, int(contains)
         sparsity = int(g.get_sparsity() * 100)
         edges = get_hamilton(g)
-        predict = 0
         if len(edges) > 0:
             if is_hamilton_cycle(edges):
                 print "confirmed cycle"
             else:
                 print 'not a cycle tho'
             predict = 1
-        if predict == g.label:
+        if contains == g.label:
             score += 1
-        else:
-            print g.num_nodes, g.label, g.get_sparsity()
     print (float(score) / len(graphs))
+#
