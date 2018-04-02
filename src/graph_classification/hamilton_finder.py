@@ -89,13 +89,13 @@ def contains_hamilton(graph):
 # returns list of edges if cycle is found, otherwise returns empty list
 def get_hamilton(graph):
     # if graph has no hamilton cycle
-    if not contains_hamilton(graph):
+    if graph.num_nodes > graph.num_edges or not contains_hamilton(graph):
         print 'no cycle'
         return []
 
     if graph.num_edges == graph.num_nodes:
         print 'found hamilton cycle'
-        return graph.get_edges(list(cycle))
+        return graph.edges
 
     cycle = set()
     B = set()       # set B from the algorithm
@@ -146,7 +146,6 @@ def is_hamilton_cycle(edges):
         if v not in count:
             count[v] = 0
         count[v] += 1
-    print count
     for c in count:
         if count[c] != 2:
             return False
@@ -159,7 +158,7 @@ if __name__ == '__main__':
         if re.search(MODEL_FILE_REGEX, f):
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
-    graphs = load_data('data/test_data/test.txt')
+    graphs = load_data('data/test_data/test.txt')[0:30]
     score = 0
     for g in graphs:
         # print g.num_nodes, g.label, g.num_edges
@@ -175,4 +174,6 @@ if __name__ == '__main__':
             predict = 1
         if predict == g.label:
             score += 1
+        else:
+            print g.num_nodes, g.label, g.get_sparsity()
     print (float(score) / len(graphs))
