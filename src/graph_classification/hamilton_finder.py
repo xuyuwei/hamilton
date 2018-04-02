@@ -65,6 +65,8 @@ def import_models(model_files):
 # get the model prediction of whether the graph contains a hamilton cycle
 def contains_hamilton(graph):
     sparsity = int(graph.get_sparsity() * 100)
+    if sparsity == 0:
+        return False
     if sparsity > len(model_buckets):
         raise Exception('We need a model for this sparsity level %d' % sparsity)
 
@@ -73,6 +75,7 @@ def contains_hamilton(graph):
         raise Exception('We need a model for this sparsity level %d' % sparsity)
 
     count = 0
+
     for model in model_buckets[sparsity]:
         output, loss, x = model([graph])
         if int(output.max(1)[-1]) == 1:
@@ -89,6 +92,10 @@ def get_hamilton(graph):
     if not contains_hamilton(graph):
         print 'no cycle'
         return []
+
+    if graph.num_edges == graph.num_nodes:
+        print 'found hamilton cycle'
+        return graph.get_edges(list(cycle))
 
     cycle = set()
     B = set()       # set B from the algorithm
@@ -152,10 +159,10 @@ if __name__ == '__main__':
         if re.search(MODEL_FILE_REGEX, f):
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
-    graphs = load_data('data/test_data/test.txt')[1:2]
+    graphs = load_data('data/test_data/test.txt')
     score = 0
     for g in graphs:
-        print g.num_edges
+        # print g.num_nodes, g.label, g.num_edges
         contains = contains_hamilton(g)
         sparsity = int(g.get_sparsity() * 100)
         edges = get_hamilton(g)
