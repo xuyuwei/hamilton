@@ -80,7 +80,7 @@ def contains_hamilton(graph):
         output, loss, x = model([graph])
         if int(output.max(1)[-1]) == 1:
             count += 1
-    if float(count)/len(model_buckets[sparsity]) >= .5:
+    if float(count)*len(model_buckets[sparsity]) >= 0.5:
         return True
     return False
 
@@ -89,44 +89,50 @@ def contains_hamilton(graph):
 # returns list of edges if cycle is found, otherwise returns empty list
 def get_hamilton(graph):
     # if graph has no hamilton cycle
-    if not contains_hamilton(graph):
+    if graph.num_edges < graph.num_nodes or not contains_hamilton(graph):
         print 'no cycle'
         return []
 
     if graph.num_edges == graph.num_nodes:
         print 'found hamilton cycle'
-        return graph.get_edges(list(cycle))
+        return graph.edges
 
-    cycle = set()
-    B = set()       # set B from the algorithm
-    used = set()    # set of edges already chosen
-    while True:
-        # if we find a cycle
-        if len(cycle) == graph.num_nodes:
-            print 'found hamilton cycle'
-            return graph.get_edges(list(cycle))
+    graph_edge_indices = set([i for i in range(graph.num_edges)])
+    not_cycle = set()    # set of edges not in cycle
+    for i in range (1):
 
         # if we go through all the edges, we must have not found the cycle
-        if len(used) == graph.num_edges:
-            print "we found %d/%d of the edges in the hamilton cycle" % (len(cycle), graph.num_nodes)
-            return graph.get_edges(list(cycle))
+        if graph.num_edges == len(not_cycle):
+            print 'could not find cycle'
+            return []
 
+        perm = np.random.permutation(graph.num_edges)
         # choose a random edge that has not been used yet
-        edge_index = graph.choose_random_edge(used)
-        edge = graph.get_edges(edge_index)
+        for edge_index in perm:
+            # if we find a cycle
+            if graph.num_edges - len(not_cycle) == graph.num_nodes:
+                print 'found hamilton cycle'
+                cycle_edge_indices = graph_edge_indices
+                for j in not_cycle:
+                    cycle_edge_indices.remove(j)
+                return graph.get_edges(list(cycle_edge_indices))
+            if edge_index in not_cycle:
+                continue
 
-        used.add(edge_index)
+            # remove edge from graph
+            not_cycle.add(edge_index)
+            graph.remove_edges(list(not_cycle))
 
-        # add this edge to B, remove B from graph
-        B.add(edge_index)
-        graph.remove_edges(list(B))
-        # if there exists no hamilton cycle, that edge must be in the cycle
-        if not contains_hamilton(graph):
-            cycle.add(edge_index)
-            B.remove(edge_index)
+            # if there does not exist a hamilton cycle, that edge mmight be in the cycle
+            if not contains_hamilton(graph):
+                not_cycle.remove(edge_index)
 
-        # reset the graphs edges to show all of them
-        graph.reset()
+            # reset the graphs edges to show all of them
+            graph.reset()
+
+    print ('%d node graph reduced from %d edges to %d edges' %
+        (graph.num_nodes, graph.num_edges, graph.num_edges - len(not_cycle)))
+    return []
 
 
 def count_nodes(nodes):
@@ -146,7 +152,6 @@ def is_hamilton_cycle(edges):
         if v not in count:
             count[v] = 0
         count[v] += 1
-    print count
     for c in count:
         if count[c] != 2:
             return False
@@ -159,12 +164,10 @@ if __name__ == '__main__':
         if re.search(MODEL_FILE_REGEX, f):
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
-    graphs = load_data('data/test_data/test.txt')
+    graphs = load_data('data/test_data/test.txt')[0:20]
     score = 0
     for g in graphs:
         # print g.num_nodes, g.label, g.num_edges
-        contains = contains_hamilton(g)
-        sparsity = int(g.get_sparsity() * 100)
         edges = get_hamilton(g)
         predict = 0
         if len(edges) > 0:
@@ -172,7 +175,11 @@ if __name__ == '__main__':
                 print "confirmed cycle"
             else:
                 print 'not a cycle tho'
+
+        if contains_hamilton(g):
             predict = 1
         if predict == g.label:
             score += 1
+        else:
+            print graphs
     print (float(score) / len(graphs))
