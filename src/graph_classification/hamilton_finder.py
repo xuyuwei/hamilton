@@ -6,6 +6,8 @@ import re
 import numpy as np
 from main import Classifier
 from util import S2VGraph, cmd_args
+import time
+
 
 # Regular expression for the model files
 MODEL_FILE_REGEX = r'epoch-best([0-9]+-[0-9]+)\w+'
@@ -163,6 +165,11 @@ def is_hamilton_cycle(edges):
 
 
 if __name__ == '__main__':
+    
+    # Keep track of correct responses
+    cor = 0
+    call_con = 0
+
     model_files = []
     for f in os.listdir(cmd_args.models_dir):
         if re.search(MODEL_FILE_REGEX, f):
@@ -174,7 +181,57 @@ if __name__ == '__main__':
         if found_ham:
             print 'model found hamilton cycle'
         elif len(matrix) == 0:
-            print 'no hamilton cycle'
+            if g.label == 0:
+                print 'no hamilton cycle'
+            else:
+                print 'wrong inital classification'
         else:
+            call_con += 1
             # TODO: solve hamilton cycle with concorde
-            pass
+            # pass
+            # Write to TSP format
+            # Header for file
+            dim = len(matrix)
+            #print(matrix)
+
+            pre_filename = str(0)
+            filename = str(0) + 'input.tsp'
+            writeval = ['NAME: ' + pre_filename + '\n', \
+                'TYPE: TSP (M.~Hofmeister)' + '\n', \
+                'DIMENSION: ' + str(dim) + '\n', \
+                'EDGE_WEIGHT_TYPE: EXPLICIT' + '\n', \
+                'EDGE_WEIGHT_FORMAT: FULL_MATRIX' + '\n', \
+                'DISPLAY_DATA_TYPE: NO_DISPLAY' + '\n', \
+                'EDGE_WEIGHT_SECTION' + '\n ']
+
+            # Add matrix
+            MAX_ROW_SIZE = 16
+            cur_row_size = 0
+            for i in range(0,dim):
+                for j in range(0,dim):
+                    if cur_row_size < MAX_ROW_SIZE:
+                        writeval.append(str(1-(int)(matrix[i][j])) + ' ')
+                        cur_row_size += 1
+                    else:
+                        writeval.append(str(1-(int)(matrix[i][j])) + '\n ')
+                        cur_row_size = 0
+
+            # Write to file
+            writeval.append('\n EOF')
+            f = open(filename, 'w')
+            f.writelines(writeval)
+            f.close()
+
+            # Run concorde on file
+            concorde_out = os.popen('concorde -x ' + filename + ' 2>/dev/null ').read()
+            #print(concorde_out)
+            # Check output to find ham cycle
+            if 'Optimal Solution: 0.00' in concorde_out:
+                print 'cycle found by concorde'
+                cor += 1
+
+            else:
+                print 'cycle not found by concorde'
+
+    print(cor)
+    print(call_con)
