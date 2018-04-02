@@ -53,13 +53,10 @@ def import_models(model_files):
     # Load models
     for f in model_files:
         model = torch.load(f, map_location=lambda storage, loc: storage)
-        # get the edge % the model has been trained on
         re_match = re.search(MODEL_FILE_REGEX, os.path.basename(f))
         lower_p, upper_p = list(map(int, re_match.group(1).split('-')))
-        # print f, lower_p, upper_p
         for i in range(lower_p, upper_p):
             model_buckets[i].append([f, model])
-    print map(len, model_buckets)
 
 
 # get the model prediction of whether the graph contains a hamilton cycle
@@ -85,35 +82,38 @@ def contains_hamilton(graph):
     return False
 
 
-# get hamilton cycle from a graph according to our algorithm
-# returns list of edges if cycle is found, otherwise returns empty list
-def get_hamilton(graph):
+def edges_to_matrix(num_nodes, edges):
+    matrix = [[0 for i in range(num_nodes)] for j in range(num_nodes)]
+    for x,y in edges:
+        matrix[x][y] = 1
+        matrix[y][x] = 1
+    return matrix
+
+
+# reduce graph into a simpler graph to solve for concorde
+# return bool (if hamilton found), nxn matrix (reduced graph)
+# matrix is empty list if no hamilton cycle exists
+def reduce_graph(graph):
     # if graph has no hamilton cycle
     if graph.num_nodes > graph.num_edges or not contains_hamilton(graph):
-        print 'no cycle'
-        return []
+        return False, []
 
     if graph.num_edges == graph.num_nodes:
-        print 'found hamilton cycle'
-        return graph.edges
+        return True, edges_to_matrix(graph.num_nodes, graph.edges)
 
     graph_edge_indices = set([i for i in range(graph.num_edges)])
     not_cycle = set()    # set of edges not in cycle
     for i in range(graph.num_edges / 2):
-        # if we go through all the edges, we must have not found the cycle
-        if graph.num_edges == len(not_cycle):
-            print 'could not find cycle'
-            return []
-
         # choose a random edge that has not been used yet
         edge_index = graph.choose_random_edge(not_cycle)
+
         # if we find a cycle
         if graph.num_edges - len(not_cycle) == graph.num_nodes:
-            print 'found hamilton cycle'
             cycle_edge_indices = graph_edge_indices
             for j in not_cycle:
                 cycle_edge_indices.remove(j)
-            return graph.get_edges(list(cycle_edge_indices))
+            return True, edges_to_matrix(graph.num_nodes,
+                graph.get_edges(list(cycle_edge_indices)))
         if edge_index in not_cycle:
             continue
 
@@ -130,7 +130,13 @@ def get_hamilton(graph):
 
     print ('%d node graph reduced from %d edges to %d edges' %
         (graph.num_nodes, graph.num_edges, graph.num_edges - len(not_cycle)))
-    return []
+
+    # return reduced graph
+    reduced_graph_edges = graph_edge_indices
+    for j in not_cycle:
+        reduced_graph_edges.remove(j)
+    return False, edges_to_matrix(graph.num_nodes,
+        graph.get_edges(list(reduced_graph_edges)))
 
 
 def count_nodes(nodes):
@@ -163,18 +169,12 @@ if __name__ == '__main__':
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
     graphs = load_data('data/ACTUAL_DATA/09-10_20-100_30/09-10_20-100_30.txt')[0:100]
-    score = 0
     for g in graphs:
-        contains = int(contains_hamilton(g))
-        sparsity = int(g.get_sparsity() * 100)
-        edges = get_hamilton(g)
-        if len(edges) > 0:
-            if is_hamilton_cycle(edges):
-                print "confirmed cycle"
-            else:
-                print 'not a cycle tho'
-
-        if contains == g.label:
-            score += 1
-    print (float(score) / len(graphs))
-#
+        found_ham, matrix = reduce_graph(g)
+        if found_ham:
+            print 'model found hamilton cycle'
+        elif len(matrix) == 0:
+            print 'no hamilton cycle'
+        else:
+            # TODO: solve hamilton cycle with concorde
+            pass
