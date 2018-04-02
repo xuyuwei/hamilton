@@ -105,9 +105,9 @@ def reduce_graph(graph):
 
     graph_edge_indices = set([i for i in range(graph.num_edges)])
     not_cycle = set()    # set of edges not in cycle
-    for i in range(graph.num_edges / 2):
+    batch = max(1, int((graph.num_edges - graph.num_nodes) / 20))
+    for i in range(graph.num_edges / 20):
         # choose a random edge that has not been used yet
-        edge_index = graph.choose_random_edge(not_cycle)
 
         # if we find a cycle
         if graph.num_edges - len(not_cycle) == graph.num_nodes:
@@ -116,16 +116,20 @@ def reduce_graph(graph):
                 cycle_edge_indices.remove(j)
             return True, edges_to_matrix(graph.num_nodes,
                 graph.get_edges(list(cycle_edge_indices)))
-        if edge_index in not_cycle:
-            continue
 
-        # remove edge from graph
-        not_cycle.add(edge_index)
+        edges_to_remove = []
+        for j in xrange(batch):
+            edge_index = graph.choose_random_edge(not_cycle)
+            edges_to_remove.append(edge_index)
+            not_cycle.add(edge_index)
+
+        # remove edges from graph
         graph.remove_edges(list(not_cycle))
 
         # if there does not exist a hamilton cycle, that edge mmight be in the cycle
         if not contains_hamilton(graph):
-            not_cycle.remove(edge_index)
+            for e_index in edges_to_remove:
+                not_cycle.remove(e_index)
 
         # reset the graphs edges to show all of them
         graph.reset()
@@ -293,3 +297,4 @@ if __name__ == '__main__':
         #print(concorde_out)
     end_con = time.time()
     print('Time concorde: ', end_con-start_con)
+

@@ -1,0 +1,161 @@
+Namespace(batch_size=20, data='ACTUAL_DATA/', feat_dim=1, fold=1, gm='mean_field', hidden=128, latent_dim=128, learning_rate=0.1, lr_decay=0.0, max_lv=3, mode='cpu', models_dir='actual-models/', momentum=0.0, num_class=2, num_epochs=10, optim='Adagrad', out_dim=0, save_dir='best-model/', seed=1)
+loading data
+no hamilton cycle
+no hamilton cycle
+70 node graph reduced from 233 edges to 168 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+no hamilton cycle
+69 node graph reduced from 196 edges to 169 edges
+cycle found by concorde
+90 node graph reduced from 347 edges to 211 edges
+cycle found by concorde
+no hamilton cycle
+88 node graph reduced from 382 edges to 211 edges
+cycle found by concorde
+no hamilton cycle
+83 node graph reduced from 339 edges to 211 edges
+cycle found by concorde
+92 node graph reduced from 381 edges to 228 edges
+cycle found by concorde
+no hamilton cycle
+70 node graph reduced from 227 edges to 187 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+76 node graph reduced from 250 edges to 190 edges
+cycle found by concorde
+no hamilton cycle
+67 node graph reduced from 239 edges to 179 edges
+cycle found by concorde
+76 node graph reduced from 273 edges to 207 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+78 node graph reduced from 281 edges to 197 edges
+cycle found by concorde
+no hamilton cycle
+27 node graph reduced from 33 edges to 33 edges
+cycle found by concorde
+53 node graph reduced from 109 edges to 104 edges
+cycle found by concorde
+no hamilton cycle
+97 node graph reduced from 445 edges to 275 edges
+cycle found by concorde
+62 node graph reduced from 154 edges to 138 edges
+cycle found by concorde
+no hamilton cycle
+59 node graph reduced from 171 edges to 141 edges
+cycle found by concorde
+24 node graph reduced from 25 edges to 25 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+55 node graph reduced from 144 edges to 126 edges
+cycle found by concorde
+58 node graph reduced from 140 edges to 128 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+93 node graph reduced from 407 edges to 227 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+no hamilton cycle
+83 node graph reduced from 291 edges to 195 edges
+cycle found by concorde
+57 node graph reduced from 161 edges to 134 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+43 node graph reduced from 80 edges to 75 edges
+cycle found by concorde
+no hamilton cycle
+97 node graph reduced from 487 edges to 211 edges
+cycle not found, but there should be
+no hamilton cycle
+52 node graph reduced from 137 edges to 121 edges
+cycle found by concorde
+no hamilton cycle
+86 node graph reduced from 342 edges to 198 edges
+cycle found by concorde
+72 node graph reduced from 245 edges to 180 edges
+cycle found by concorde
+76 node graph reduced from 251 edges to 196 edges
+cycle found by concorde
+83 node graph reduced from 312 edges to 200 edges
+cycle found by concorde
+no hamilton cycle
+89 node graph reduced from 375 edges to 223 edges
+cycle found by concorde
+model found hamilton cycle
+96 node graph reduced from 428 edges to 228 edges
+cycle not found, but there should be
+no hamilton cycle
+38 node graph reduced from 83 edges to 79 edges
+cycle found by concorde
+no hamilton cycle
+30 node graph reduced from 42 edges to 40 edges
+cycle not found, but there should be
+36 node graph reduced from 65 edges to 61 edges
+cycle found by concorde
+no hamilton cycle
+90 node graph reduced from 357 edges to 197 edges
+cycle not found, but there should be
+66 node graph reduced from 221 edges to 169 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+63 node graph reduced from 180 edges to 150 edges
+cycle found by concorde
+45 node graph reduced from 87 edges to 82 edges
+cycle not found, but there should be
+68 node graph reduced from 225 edges to 181 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+48 node graph reduced from 139 edges to 123 edges
+cycle found by concorde
+no hamilton cycle
+82 node graph reduced from 295 edges to 217 edges
+cycle found by concorde
+no hamilton cycle
+42 node graph reduced from 78 edges to 74 edges
+cycle found by concorde
+39 node graph reduced from 76 edges to 72 edges
+cycle not found, but there should be
+61 node graph reduced from 165 edges to 141 edges
+cycle found by concorde
+no hamilton cycle
+97 node graph reduced from 473 edges to 198 edges
+cycle not found, but there should be
+100 node graph reduced from 465 edges to 256 edges
+cycle found by concorde
+94 node graph reduced from 421 edges to 231 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+98 node graph reduced from 455 edges to 246 edges
+cycle found by concorde
+56 node graph reduced from 142 edges to 128 edges
+cycle found by concorde
+87 node graph reduced from 376 edges to 223 edges
+cycle found by concorde
+95 node graph reduced from 403 edges to 313 edges
+cycle not found, but there should be
+no hamilton cycle
+no hamilton cycle
+72 node graph reduced from 244 edges to 179 edges
+cycle found by concorde
+45 node graph reduced from 94 edges to 89 edges
+cycle found by concorde
+43 node graph reduced from 93 edges to 88 edges
+cycle not found, but there should be
+no hamilton cycle
+100 node graph reduced from 434 edges to 254 edges
+cycle not found, but there should be
+45
+55
+('Time using our method: ', 16.068588972091675)
+('Time concorde: ', 31.066613912582397)

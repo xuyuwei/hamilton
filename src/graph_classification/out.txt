@@ -1,0 +1,12 @@
+Namespace(batch_size=20, data='ACTUAL_DATA/', feat_dim=1, fold=1, gm='mean_field', hidden=128, latent_dim=128, learning_rate=0.1, lr_decay=0.0, max_lv=3, mode='cpu', models_dir='actual-models/', momentum=0.0, num_class=2, num_epochs=10, optim='Adagrad', out_dim=0, save_dir='best-model/', seed=1)
+loading data
+no hamilton cycle
+no hamilton cycle
+70 node graph reduced from 233 edges to 183 edges
+cycle found by concorde
+no hamilton cycle
+no hamilton cycle
+no hamilton cycle
+69 node graph reduced from 196 edges to 166 edges
+cycle found by concorde
+90 node graph reduced from 347 edges to 219 edges
