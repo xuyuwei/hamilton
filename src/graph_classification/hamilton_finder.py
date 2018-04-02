@@ -79,7 +79,7 @@ def contains_hamilton(graph):
         output, loss, x = model([graph])
         if int(output.max(1)[-1]) == 1:
             count += 1
-    if float(count)*len(model_buckets[sparsity]) >= 0.5:
+    if float(count)*len(model_buckets[sparsity]) >= 0.9:
         return True
     return False
 
@@ -176,10 +176,16 @@ if __name__ == '__main__':
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
     graphs = load_data('data/ACTUAL_DATA/09-10_20-100_30/09-10_20-100_30.txt')[0:100]
+    score = 0
+    
+    # Get time
+    start = time.time()
     for g in graphs:
         found_ham, matrix = reduce_graph(g)
+        predict = 0
         if found_ham:
             print 'model found hamilton cycle'
+            predict = 1
         elif len(matrix) == 0:
             if g.label == 0:
                 print 'no hamilton cycle'
@@ -227,11 +233,63 @@ if __name__ == '__main__':
             #print(concorde_out)
             # Check output to find ham cycle
             if 'Optimal Solution: 0.00' in concorde_out:
-                print 'cycle found by concorde'
-                cor += 1
+                
+                if g.label == 1:
+                	cor += 1
+                	print 'cycle found by concorde'
+               
+
 
             else:
-                print 'cycle not found by concorde'
+                
+                if g.label == 0:
+                	cor += 1
+                	print 'cycle not found by concorde, which is correct'
+                else :
+                	print 'cycle not found, but there should be'
 
     print(cor)
     print(call_con)
+    end = time.time()
+    print('Time using our method: ', end-start)
+    # COMPARE WITH CONCORDE
+    start_con = time.time()
+
+    for g in graphs:
+    	# Write to matrix format
+    	matrix = edges_to_matrix(g.num_nodes, g.edges)
+    	dim = len(matrix)
+
+        pre_filename = str(0)
+        filename = str(0) + 'input.tsp'
+        writeval = ['NAME: ' + pre_filename + '\n', \
+            'TYPE: TSP (M.~Hofmeister)' + '\n', \
+            'DIMENSION: ' + str(dim) + '\n', \
+            'EDGE_WEIGHT_TYPE: EXPLICIT' + '\n', \
+            'EDGE_WEIGHT_FORMAT: FULL_MATRIX' + '\n', \
+            'DISPLAY_DATA_TYPE: NO_DISPLAY' + '\n', \
+            'EDGE_WEIGHT_SECTION' + '\n ']
+
+        # Add matrix
+        MAX_ROW_SIZE = 16
+        cur_row_size = 0
+        for i in range(0,dim):
+            for j in range(0,dim):
+                if cur_row_size < MAX_ROW_SIZE:
+                    writeval.append(str(1-(int)(matrix[i][j])) + ' ')
+                    cur_row_size += 1
+                else:
+                    writeval.append(str(1-(int)(matrix[i][j])) + '\n ')
+                    cur_row_size = 0
+
+        # Write to file
+        writeval.append('\n EOF')
+        f = open(filename, 'w')
+        f.writelines(writeval)
+        f.close()
+
+        # Run concorde on file
+        concorde_out = os.popen('concorde -x ' + filename + ' 2>/dev/null ').read()
+        #print(concorde_out)
+    end_con = time.time()
+    print('Time concorde: ', end_con-start_con)
