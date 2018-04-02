@@ -77,7 +77,7 @@ def contains_hamilton(graph):
         output, loss, x = model([graph])
         if int(output.max(1)[-1]) == 1:
             count += 1
-    if float(count)*len(model_buckets[sparsity]) >= 0.5:
+    if float(count)*len(model_buckets[sparsity]) >= 0.9:
         return True
     return False
 
@@ -169,12 +169,19 @@ if __name__ == '__main__':
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
     graphs = load_data('data/ACTUAL_DATA/09-10_20-100_30/09-10_20-100_30.txt')[0:100]
+    score = 0
     for g in graphs:
         found_ham, matrix = reduce_graph(g)
+        predict = 0
         if found_ham:
             print 'model found hamilton cycle'
+            predict = 1
         elif len(matrix) == 0:
             print 'no hamilton cycle'
         else:
             # TODO: solve hamilton cycle with concorde
-            pass
+            predict = 1
+
+        if predict == g.label:
+            score += 1
+    print "Total prediction accuracy %f" % float(score)/len(graphs)
