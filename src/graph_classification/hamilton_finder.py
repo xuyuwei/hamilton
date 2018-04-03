@@ -15,7 +15,6 @@ MODEL_FILE_REGEX = r'epoch-best([0-9]+-[0-9]+)\w+'
 # using buckets for models
 model_buckets = [[] for i in range(35)]
 
-
 # basically same function as the one in util.py but without 10-fold
 def load_data(data_file):
     print('loading data')
@@ -27,6 +26,7 @@ def load_data(data_file):
         n_g = int(f.readline().strip())
         for i in range(n_g):
             row = f.readline().strip().split()
+            #print(row)
             n, l = [int(w) for w in row]
             g = nx.Graph()
             node_tags = []
@@ -98,15 +98,21 @@ def edges_to_matrix(num_nodes, edges):
 def reduce_graph(graph):
     # if graph has no hamilton cycle
     if graph.num_nodes > graph.num_edges or not contains_hamilton(graph):
-        return False, []
+        return False, [], graph.num_edges
 
     if graph.num_edges == graph.num_nodes:
         return True, edges_to_matrix(graph.num_nodes, graph.edges)
 
     graph_edge_indices = set([i for i in range(graph.num_edges)])
     not_cycle = set()    # set of edges not in cycle
-    batch = max(1, int((graph.num_edges - graph.num_nodes) / 20))
-    for i in range(graph.num_edges / 20):
+
+    ################# PARAMETERS TO MODIFY ##################
+    b_size = int((graph.num_edges - graph.num_nodes) / 32)
+    num_batches = graph.num_edges / 20
+    #######################################################3
+
+    batch = max(1, b_size)
+    for i in range(num_batches):
         # choose a random edge that has not been used yet
 
         # if we find a cycle
@@ -135,14 +141,15 @@ def reduce_graph(graph):
         graph.reset()
 
     print ('%d node graph reduced from %d edges to %d edges' %
-        (graph.num_nodes, graph.num_edges, graph.num_edges - len(not_cycle)))
+    	(graph.num_nodes, graph.num_edges, graph.num_edges - len(not_cycle)))
 
     # return reduced graph
+    num_removed = (graph.num_edges - len(not_cycle))
     reduced_graph_edges = graph_edge_indices
     for j in not_cycle:
         reduced_graph_edges.remove(j)
     return False, edges_to_matrix(graph.num_nodes,
-        graph.get_edges(list(reduced_graph_edges)))
+        graph.get_edges(list(reduced_graph_edges))), num_removed
 
 
 def count_nodes(nodes):
@@ -171,38 +178,63 @@ def is_hamilton_cycle(edges):
 if __name__ == '__main__':
     
     # Keep track of correct responses
-    cor = 0
-    call_con = 0
+    cor = 0			# Correct output from concorde
+    call_con = 0	# Total calls to concorde
+    result = 0		# Total correct results
+    cor_class = 0 	# Total correct classification
 
     model_files = []
     for f in os.listdir(cmd_args.models_dir):
         if re.search(MODEL_FILE_REGEX, f):
             model_files.append(os.path.join(cmd_args.models_dir, f))
     import_models(model_files)
-    graphs = load_data('data/ACTUAL_DATA/09-10_20-100_30/09-10_20-100_30.txt')[0:100]
-    score = 0
     
+    # TEST SET DIRS
+    #   01-05_500-1000_00  
+    #   05-15_50-100_00  
+    #   50-100Node
+    #   100-200Node
+    #   500-1000Node
+    #graphs = load_data('data/TESTSET/01-05_500-1000_00/01-05_500-1000_00.txt')[0:50]
+    #graphs = load_data('data/TESTSET/100-200Node.txt')[0:50]
+    #graphs = load_data('data/TESTSET/08-15_50-100_00/08-15_50-100_00.txt')[0:100]
+    #graphs = load_data('data/TESTSET/05-15_50-100_00/05-15_50-100_00.txt')[0:1000]
+    graphs = load_data('data/TESTSET/50-100Node.txt')[0:1000]
+
+
     # Get time
     start = time.time()
+    ratio = 0
     for g in graphs:
-        found_ham, matrix = reduce_graph(g)
-        predict = 0
+    
+        bef = g.num_edges
+
+        found_ham, matrix, aft = reduce_graph(g)
+
         if found_ham:
             print 'model found hamilton cycle'
             predict = 1
+            if g.label == 1:
+                result +=1
+
         elif len(matrix) == 0:
             if g.label == 0:
                 print 'no hamilton cycle'
+                result += 1
+                cor_class += 1
             else:
                 print 'wrong inital classification'
+
         else:
+
+            # Initial classification is correct
+            if g.label == 1:
+                cor_class += 1
+
+            k = float(bef - aft)/bef
+            ratio += k 
             call_con += 1
-            # TODO: solve hamilton cycle with concorde
-            # pass
-            # Write to TSP format
-            # Header for file
             dim = len(matrix)
-            #print(matrix)
 
             pre_filename = str(0)
             filename = str(0) + 'input.tsp'
@@ -234,35 +266,40 @@ if __name__ == '__main__':
 
             # Run concorde on file
             concorde_out = os.popen('concorde -x ' + filename + ' 2>/dev/null ').read()
-            #print(concorde_out)
             # Check output to find ham cycle
             if 'Optimal Solution: 0.00' in concorde_out:
                 
                 if g.label == 1:
-                	cor += 1
-                	print 'cycle found by concorde'
+                    cor += 1
+                    result += 1
+                    print 'cycle found by concorde'
                
-
-
             else:
-                
                 if g.label == 0:
-                	cor += 1
-                	print 'cycle not found by concorde, which is correct'
+                    cor += 1
+                    result += 1
+                    print 'cycle not found by concorde, which is correct'
                 else :
-                	print 'cycle not found, but there should be'
+                    print 'cycle not found, but there should be'
 
-    print(cor)
-    print(call_con)
+    # Print Results                
     end = time.time()
-    print('Time using our method: ', end-start)
+    ratio = ratio/call_con
+    print 'Correct initial classification %d/%d'%((cor_class),len(graphs))
+    print 'Fraction of edges removed: %f'%(ratio)
+    print 'Correct calls to concorde: %d/%d'%(cor,call_con)
+    print 'Correct total: %d/%d'%(result, len(graphs))
+    print 'Time using our method: %f'%(end-start)
+
     # COMPARE WITH CONCORDE
     start_con = time.time()
 
+    iteration = 0
     for g in graphs:
-    	# Write to matrix format
-    	matrix = edges_to_matrix(g.num_nodes, g.edges)
-    	dim = len(matrix)
+    	
+        # Write to matrix format
+        matrix = edges_to_matrix(g.num_nodes, g.edges)
+        dim = len(matrix)
 
         pre_filename = str(0)
         filename = str(0) + 'input.tsp'
@@ -294,7 +331,8 @@ if __name__ == '__main__':
 
         # Run concorde on file
         concorde_out = os.popen('concorde -x ' + filename + ' 2>/dev/null ').read()
-        #print(concorde_out)
-    end_con = time.time()
-    print('Time concorde: ', end_con-start_con)
 
+    # Running time for concorde
+    end_con = time.time()
+    print 'Time concorde: %f'%(end_con-start_con)
+    

@@ -8,14 +8,24 @@ import DataSet as DataSet
 
 
 d = DataSet.DataSet(points = 1000, 
-	edge_range = [0.07,0.15], 
-	node_range = [20, 100], 
-	prob_hc = 0.20)
+	edge_range = [0.05,0.20], 
+	node_range = [50, 100], 
+	prob_hc = 0.)
 d.Generate(num_threads=4)
 d.ToDirectory()
 d.ToDataFolder()
 
 
+
+'''
+d = DataSet.DataSet(points = 10, 
+	edge_range = [0.05,0.10], 
+	node_range = [500, 1000], 
+	prob_hc = 0.)
+d.Generate(num_threads=4)
+d.ToDirectory()
+d.ToDataFolder()
+'''
 
 '''
 d = DataSet.DataSet(points = 18000, 
