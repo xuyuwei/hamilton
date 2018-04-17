@@ -7,7 +7,7 @@ import numpy as np
 import DataSet as DataSet
 
 
-'''
+
 d = DataSet.DataSet(points = 18000, 
 	edge_range = [0.08,0.09], 
 	node_range = [20, 100], 
@@ -59,7 +59,7 @@ d = DataSet.DataSet(points = 10000,
 d.Generate(num_threads=4)
 d.ToDirectory()
 d.ToDataFolder()
-'''
+
 
 d = DataSet.DataSet(points = 8000, 
 	edge_range = [0.12,0.15], 
